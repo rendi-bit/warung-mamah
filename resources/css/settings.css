@@ -1,0 +1,312 @@
+/* =========================================================
+   9-settings.css
+   Isi: Halaman Settings / Profil Pengguna
+   ========================================================= */
+
+/* ── LAYOUT ── */
+.settings-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+/* ── SIDEBAR ── */
+.settings-sidebar {
+    display: grid;
+    gap: 20px;
+}
+
+.settings-user-card,
+.settings-card {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid #eef2f7;
+    text-align: left;
+}
+
+.settings-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), #22c55e);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 16px;
+}
+
+.settings-user-card h3 {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.settings-user-card p {
+    color: var(--muted);
+    word-break: break-word;
+}
+
+.settings-menu {
+    background: white;
+    border-radius: 20px;
+    padding: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid #eef2f7;
+    display: grid;
+    gap: 10px;
+}
+
+.settings-menu-item {
+    padding: 14px 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    color: var(--text);
+    transition: all 0.25s ease;
+    border: 1px solid transparent;
+}
+
+.settings-menu-item:hover,
+.settings-menu-item.active {
+    background: #ecfdf5;
+    color: var(--primary);
+    border-color: #bbf7d0;
+}
+
+/* ── CONTENT ── */
+.settings-content {
+    display: grid;
+    gap: 24px;
+}
+
+.settings-card-header {
+    margin-bottom: 20px;
+}
+
+.settings-card-header h3 {
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+.settings-card-header p {
+    color: var(--muted);
+}
+
+/* ── PROFILE INFO ── */
+.profile-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+.profile-info-item {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 18px;
+}
+
+.profile-info-item span {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+.profile-info-item strong {
+    font-size: 16px;
+    color: var(--text);
+}
+
+/* ── MINI ANALYTICS ── */
+.mini-analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+}
+
+.mini-analytics-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 22px;
+    padding: 22px;
+    transition: all 0.25s ease;
+}
+
+.mini-analytics-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+}
+
+.mini-analytics-card span {
+    display: block;
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+
+.mini-analytics-card h4 {
+    font-size: 26px;
+    color: var(--text);
+    margin-bottom: 10px;
+}
+
+.mini-analytics-card p {
+    color: var(--muted);
+    line-height: 1.7;
+}
+
+/* ── FORM SETTINGS ── */
+.settings-form {
+    display: grid;
+    gap: 28px;
+}
+
+.profile-upload-section {
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.profile-upload-box {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.profile-preview-image,
+.profile-preview-placeholder {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: linear-gradient(135deg, var(--primary), #22c55e);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    font-weight: 800;
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+}
+
+.profile-upload-info {
+    flex: 1;
+    min-width: 240px;
+}
+
+.profile-upload-info p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 10px;
+    line-height: 1.7;
+}
+
+.profile-file-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+    cursor: pointer;
+}
+
+.profile-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.settings-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-input-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.settings-input-group label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+}
+
+.settings-input-group input,
+.settings-input-group textarea,
+.settings-input-group select {
+    width: 100%;
+    border: 1px solid #dbe2ea;
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 14px 16px;
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    transition: all 0.25s ease;
+}
+
+.settings-input-group input:focus,
+.settings-input-group textarea:focus,
+.settings-input-group select:focus {
+    border-color: #22c55e;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.10);
+}
+
+.settings-input-group textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.settings-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 6px;
+}
+
+.settings-save-btn {
+    min-width: 220px;
+    border-radius: 16px;
+    font-weight: 800;
+    padding: 14px 22px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 992px) {
+    .settings-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .mini-analytics-grid,
+    .profile-info-grid,
+    .profile-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-form-actions {
+        justify-content: stretch;
+    }
+
+    .settings-save-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .profile-upload-box {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .profile-upload-info {
+        width: 100%;
+    }
+}

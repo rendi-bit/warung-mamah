@@ -94,8 +94,20 @@
                         </div>
 
                         <div class="detail-action-box">
-                            <button type="submit" class="btn btn-primary detail-btn-main">
+                            <button
+                                type="submit"
+                                formaction="{{ route('cart.add', $product->id) }}"
+                                class="btn btn-light detail-btn-secondary"
+                            >
                                 Tambah ke Keranjang
+                            </button>
+
+                            <button
+                                type="submit"
+                                formaction="{{ route('cart.buyNow', $product->id) }}"
+                                class="btn btn-primary detail-btn-main"
+                            >
+                                Beli Sekarang
                             </button>
 
                             <a href="{{ route('products.index') }}" class="btn btn-light detail-btn-secondary">
@@ -174,67 +186,103 @@
 
 
     <section class="review-section">
-
-    <div class="section-header">
-        <h2>Ulasan Produk</h2>
-        <p>Penilaian dari pelanggan yang sudah membeli.</p>
-    </div>
-
-    {{-- RATING SUMMARY --}}
-    <div class="review-summary">
-        <div class="review-score">
-            <h1>{{ number_format($avgRating ?? 0, 1) }}</h1>
-            <div class="stars">
-                @for($i = 1; $i <= 5; $i++)
-                    <span class="{{ $i <= round($avgRating) ? 'active' : '' }}">★</span>
-                @endfor
+    <div class="review-card-premium">
+        <div class="review-heading">
+            <div>
+                <span class="review-badge">Ulasan Pelanggan</span>
+                <h2>Review & Rating Produk</h2>
+                <p>Lihat pengalaman pelanggan setelah membeli produk ini.</p>
             </div>
-            <p>{{ $reviews->count() }} ulasan</p>
         </div>
-    </div>
 
-    {{-- FORM REVIEW --}}
-    @auth
-    <div class="review-form-box">
-        <form action="{{ route('products.reviews.store', $product->id) }}" method="POST">
-            @csrf
+        <div class="review-layout">
+            <div class="review-summary-premium">
+                <h1>{{ number_format($avgRating ?? 0, 1) }}</h1>
 
-            <label>Rating</label>
-            <div class="rating-input">
-                @for($i = 5; $i >= 1; $i--)
-                    <input type="radio" name="rating" value="{{ $i }}" id="star{{ $i }}">
-                    <label for="star{{ $i }}">★</label>
-                @endfor
-            </div>
-
-            <textarea name="comment" placeholder="Tulis pengalaman kamu..." rows="4"></textarea>
-
-            <button class="btn btn-primary">Kirim Review</button>
-        </form>
-    </div>
-    @endauth
-
-    {{-- LIST REVIEW --}}
-    <div class="review-list">
-        @forelse($reviews as $review)
-            <div class="review-card">
-                <div class="review-header">
-                    <strong>{{ $review->user->name }}</strong>
-
-                    <div class="stars">
-                        @for($i = 1; $i <= 5; $i++)
-                            <span class="{{ $i <= $review->rating ? 'active' : '' }}">★</span>
-                        @endfor
-                    </div>
+                <div class="stars review-stars-big">
+                    @for($i = 1; $i <= 5; $i++)
+                        <span class="{{ $i <= round($avgRating ?? 0) ? 'active' : '' }}">★</span>
+                    @endfor
                 </div>
 
-                <p>{{ $review->comment }}</p>
+                <p>{{ $reviews->count() }} ulasan pelanggan</p>
             </div>
-        @empty
-            <p class="text-muted">Belum ada review.</p>
-        @endforelse
-    </div>
 
+            @auth
+                <div class="review-form-premium">
+                    <h3>Tulis Review Kamu</h3>
+
+                    <form action="{{ route('products.reviews.store', $product->id) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+
+                        <label>Rating Produk</label>
+                        <div class="rating-input">
+                            @for($i = 5; $i >= 1; $i--)
+                                <input type="radio" name="rating" value="{{ $i }}" id="star{{ $i }}" required>
+                                <label for="star{{ $i }}">★</label>
+                            @endfor
+                        </div>
+
+                        <label>Komentar</label>
+                        <textarea name="comment" placeholder="Tulis pengalaman kamu setelah membeli produk ini..." rows="4"></textarea>
+
+                        <label>Foto Review</label>
+                        <input type="file" name="image" accept="image/*" class="review-file-input">
+
+                        
+                        <button type="submit" class="btn btn-primary">
+                            Kirim Review
+                        </button>
+                    </form>
+                </div>
+            @else
+                <div class="review-form-premium">
+                    <h3>Mau kasih review?</h3>
+                    <p class="text-muted">Login dulu untuk memberikan rating dan ulasan produk.</p>
+                    <a href="{{ route('login') }}" class="btn btn-primary">Login Sekarang</a>
+                </div>
+            @endauth
+        </div>
+
+        <div class="review-list-premium">
+            @forelse($reviews as $review)
+                <div class="review-item-premium">
+                    <div class="review-user">
+                        <div class="review-avatar">
+                            {{ strtoupper(substr($review->user->name ?? 'U', 0, 1)) }}
+                        </div>
+
+                        <div>
+                            <strong>{{ $review->user->name ?? 'User' }}</strong>
+                            <div class="stars">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <span class="{{ $i <= $review->rating ? 'active' : '' }}">★</span>
+                                @endfor
+                                <span class="review-date">
+                                    {{ $review->created_at->format('d M Y, H:i') }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p>{{ $review->comment ?: 'Tidak ada komentar.' }}</p>
+
+                    @if($review->image)
+    <div class="review-image-box">
+        <img src="{{ asset('storage/' . $review->image) }}" alt="Foto review">
+    </div>
+@endif
+                    
+                </div>
+            @empty
+                <div class="review-empty">
+                    <div>⭐</div>
+                    <h3>Belum ada review</h3>
+                    <p>Jadilah pelanggan pertama yang memberikan ulasan produk ini.</p>
+                </div>
+            @endforelse
+        </div>
+    </div>
 </section>
 </section>
 

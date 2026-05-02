@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
@@ -92,4 +93,77 @@ public function add(Request $request, $productId)
 
         return redirect()->back()->with('success', 'Item dihapus');
     }
-}                           
+    public function buyNow(Request $request, $productId)
+{
+    $product = Product::with('variants')->findOrFail($productId);
+
+    $rules = [
+        'quantity' => 'required|integer|min:1',
+    ];
+
+    if ($product->variants->count()) {
+        $rules['variant_id'] = 'required|exists:product_variants,id';
+    } else {
+        $rules['variant_id'] = 'nullable|exists:product_variants,id';
+    }
+
+    $request->validate($rules);
+
+    $qty = (int) $request->quantity;
+    $variantId = $request->variant_id;
+
+    $availableStock = $product->stock_quantity;
+
+    if ($variantId) {
+        $variant = ProductVariant::where('product_id', $product->id)
+            ->where('id', $variantId)
+            ->firstOrFail();
+
+        $availableStock = $variant->stock;
+    }
+
+    if ($qty > $availableStock) {
+        return redirect()->back()->with('error', 'Jumlah melebihi stok yang tersedia.');
+    }
+
+    $cart = Cart::firstOrCreate([
+        'user_id' => auth()->id(),
+    ]);
+
+    /*
+    Kalau kamu mau tombol "Beli Sekarang" hanya checkout produk ini saja,
+    aktifkan baris di bawah ini.
+
+    $cart->items()->delete();
+    */
+
+    $item = CartItem::where('cart_id', $cart->id)
+        ->where('product_id', $productId)
+        ->where('variant_id', $variantId)
+        ->first();
+
+    if ($item) {
+        $newQty = $item->quantity + $qty;
+
+        if ($newQty > $availableStock) {
+            return redirect()->back()->with('error', 'Jumlah total di keranjang melebihi stok.');
+        }
+
+        $item->update([
+            'quantity' => $newQty,
+        ]);
+    } else {
+        CartItem::create([
+            'cart_id' => $cart->id,
+            'product_id' => $productId,
+            'variant_id' => $variantId,
+            'quantity' => $qty,
+        ]);
+    }
+
+    return redirect()
+        ->route('checkout.index')
+        ->with('success', 'Produk siap dibeli. Silakan lanjut checkout.');
+}
+}  
+                         

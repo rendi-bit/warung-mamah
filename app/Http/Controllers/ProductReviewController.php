@@ -13,7 +13,14 @@ class ProductReviewController extends Controller
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        $imagePath = null;
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('reviews', 'public');
+        }
 
         ProductReview::updateOrCreate(
             [
@@ -23,6 +30,7 @@ class ProductReviewController extends Controller
             [
                 'rating' => $request->rating,
                 'comment' => $request->comment,
+                'image' => $imagePath,
             ]
         );
 

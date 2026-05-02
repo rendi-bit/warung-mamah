@@ -27,6 +27,18 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+@php
+    $whatsappNumber = '6281525874869';
+    $whatsappMessage = urlencode('Halo admin TOKO TIKA, saya ingin bertanya tentang produk dan pemesanan.');
+@endphp
+
+<a href="https://wa.me/{{ $whatsappNumber }}?text={{ $whatsappMessage }}"
+   class="whatsapp-float"
+   target="_blank"
+   rel="noopener">
+    <i class="fab fa-whatsapp"></i>
+    <span>Chat WhatsApp</span>
+</a>
 <body>
     @php
         $isAdmin = auth()->check() && auth()->user()->role && auth()->user()->role->role_name === 'admin';

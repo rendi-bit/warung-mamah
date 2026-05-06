@@ -17,7 +17,15 @@ class Order extends Model
         'payment_status',
         'order_status',
         'shipping_address',
+        'customer_whatsapp',
+        'house_landmark',
+        'delivery_method',
         'notes',
+    ];
+    
+    protected $casts = [
+        'shipped_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function user()

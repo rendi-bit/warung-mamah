@@ -18,8 +18,27 @@
                 <label>Harga Utama</label>
                 <input type="number" name="price" required>
 
-                <label>Stok Utama</label>
-                <input type="number" name="stock_quantity" required>
+                <div class="stock-input-grid">
+                    <div>
+                        <label>Stok Utama</label>
+                        <input type="number" name="stock_quantity" required placeholder="Contoh: 20">
+                    </div>
+
+                    <div>
+                        <label>Satuan Stok</label>
+                        <select name="stock_unit" required>
+                            <option value="kg">Kg</option>
+                            <option value="gram">Gram</option>
+                            <option value="pcs">Pcs</option>
+                            <option value="pack">Pack</option>
+                            <option value="dus">Dus</option>
+                            <option value="liter">Liter</option>
+                            <option value="botol">Botol</option>
+                            <option value="ikat">Ikat</option>
+                            <option value="bungkus">Bungkus</option>
+                        </select>
+                    </div>
+                </div>
 
                 <label>Kategori</label>
                 <select name="category_id" required>
@@ -43,9 +62,13 @@
                         <div class="variant-row">
                             <input type="text" name="variants[0][variant_name]" placeholder="Contoh: 1/4 kg">
                             <input type="number" name="variants[0][price]" placeholder="Harga">
-                            <input type="number" name="variants[0][stock]" placeholder="Stok">
                         </div>
                     </div>
+
+                    <button type="button" id="add-variant-btn" class="btn btn-light" style="margin-top: 14px;">
+                        + Tambah Varian
+                    </button>
+                </div>
 
                     <button type="button" id="add-variant-btn" class="btn btn-light" style="margin-top: 14px;">
                         + Tambah Varian
@@ -72,9 +95,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         row.innerHTML = `
             <input type="text" name="variants[${variantIndex}][variant_name]" placeholder="Contoh: 1/2 kg">
-            <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga">
-            <input type="number" name="variants[${variantIndex}][stock]" placeholder="Stok">
-        `;
+            <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga">`;
 
         wrapper.appendChild(row);
         variantIndex++;

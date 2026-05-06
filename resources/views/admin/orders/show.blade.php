@@ -65,14 +65,24 @@
                         <option value="failed" {{ $order->payment_status === 'failed' ? 'selected' : '' }}>Failed</option>
                     </select>
 
-                    <label>Status Pesanan</label>
-                    <select name="order_status" required>
-                        <option value="pending" {{ $order->order_status === 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="processing" {{ $order->order_status === 'processing' ? 'selected' : '' }}>Processing</option>
-                        <option value="shipped" {{ $order->order_status === 'shipped' ? 'selected' : '' }}>Shipped</option>
-                        <option value="completed" {{ $order->order_status === 'completed' ? 'selected' : '' }}>Completed</option>
-                        <option value="cancelled" {{ $order->order_status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                    </select>
+                    <label>Status Pengiriman</label>
+                    @if($order->order_status === 'completed')
+                        <input type="hidden" name="order_status" value="completed">
+
+                        <div class="status-readonly-box">
+                            Pesanan sudah diselesaikan oleh user.
+                        </div>
+                    @else
+                        <select name="order_status" required>
+                            <option value="pending" {{ $order->order_status === 'pending' ? 'selected' : '' }}>
+                                Pending
+                            </option>
+
+                            <option value="shipped" {{ $order->order_status === 'shipped' ? 'selected' : '' }}>
+                                Shipping
+                            </option>
+                        </select>
+                    @endif
 
                     <button type="submit" class="btn-warung">
                         Simpan Status

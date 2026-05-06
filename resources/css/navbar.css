@@ -57,6 +57,18 @@
     font-size: 12px;
 }
 
+.brand-logo-image {
+    padding: 0;
+    overflow: hidden;
+    background: white;
+}
+
+.brand-logo-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 /* ── NAV MENU ── */
 .nav-menu {
     display: flex;
@@ -232,6 +244,10 @@ body.drawer-open {
 
 .mobile-quick-actions a:last-child {
     border-right: none;
+}
+
+.mobile-quick-actions.admin-quick-actions {
+    grid-template-columns: repeat(2, 1fr);
 }
 
 /* ── PROFILE DROPDOWN ── */
@@ -453,4 +469,201 @@ body.drawer-open {
     background: #0f172a;
     border-color: #334155;
     color: #e2e8f0;
+}
+
+/* =========================================================
+   NAVBAR SEARCH PRODUCT
+   ========================================================= */
+
+.navbar-search {
+    position: relative;
+    flex: 1;
+    max-width: 360px;
+    margin: 0 18px;
+}
+
+.navbar-search-box {
+    height: 46px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fffaf5;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0 16px;
+    transition: all 0.25s ease;
+}
+
+.navbar-search-box:focus-within {
+    background: #ffffff;
+    border-color: var(--primary);
+    box-shadow: var(--ring);
+}
+
+.navbar-search-box i {
+    color: var(--primary-dark);
+    font-size: 15px;
+}
+
+.navbar-search-box input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+}
+
+.navbar-search-box input::placeholder {
+    color: var(--muted);
+}
+
+.search-result-box {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: 0 22px 55px rgba(92, 46, 14, 0.18);
+    padding: 10px;
+    z-index: 999;
+    display: none;
+    max-height: 430px;
+    overflow-y: auto;
+}
+
+.search-result-box.active {
+    display: block;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.2s ease;
+}
+
+.search-result-item:hover {
+    background: #fff4e8;
+}
+
+.search-result-image {
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f3eadf;
+    flex-shrink: 0;
+}
+
+.search-result-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.search-product-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-dark);
+}
+
+.search-result-content {
+    display: grid;
+    gap: 2px;
+}
+
+.search-result-content strong {
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+.search-result-content span {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.search-result-content small {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--primary-dark);
+}
+
+.search-empty {
+    padding: 18px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 992px) {
+    .navbar-search {
+        order: 3;
+        width: 100%;
+        max-width: 100%;
+        margin: 14px 0 0;
+    }
+
+    .site-nav {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-search-box {
+        height: 44px;
+    }
+
+    .search-result-box {
+        position: fixed;
+        left: 16px;
+        right: 16px;
+        top: 96px;
+        max-height: 70vh;
+    }
+}
+
+/* =========================================================
+   NAVBAR CART BADGE
+   ========================================================= */
+
+.nav-cart-link,
+.mobile-cart-link,
+.mobile-quick-cart {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cart-badge {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #dc2626, #f97316);
+    color: white;
+    font-size: 11px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: 0 8px 18px rgba(220, 38, 38, 0.25);
+}
+
+.mobile-cart-badge {
+    position: absolute;
+    top: -8px;
+    right: -10px;
 }

@@ -31,13 +31,13 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
             'stock_quantity' => 'required|integer',
+            'stock_unit' => 'required|string|max:20',
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
 
             'variants.*.variant_name' => 'nullable|string|max:255',
             'variants.*.price' => 'nullable|numeric',
-            'variants.*.stock' => 'nullable|integer',
         ]);
 
         $imagePath = null;
@@ -52,24 +52,25 @@ class ProductController extends Controller
             'description' => $request->description,
             'price' => $request->price,
             'stock_quantity' => $request->stock_quantity,
+            'stock_unit' => $request->stock_unit,
             'category_id' => $request->category_id,
             'user_id' => auth()->id(),
             'image' => $imagePath,
             'status' => 'active',
         ]);
 
-        if ($request->has('variants')) {
-            foreach ($request->variants as $variant) {
-                if (!empty($variant['variant_name']) && !empty($variant['price'])) {
-                    ProductVariant::create([
-                        'product_id' => $product->id,
-                        'variant_name' => $variant['variant_name'],
-                        'price' => $variant['price'],
-                        'stock' => $variant['stock'] ?? 0,
-                    ]);
+            if ($request->has('variants')) {
+                foreach ($request->variants as $variant) {
+                    if (!empty($variant['variant_name']) && !empty($variant['price'])) {
+                        ProductVariant::create([
+                            'product_id' => $product->id,
+                            'variant_name' => $variant['variant_name'],
+                            'price' => $variant['price'],
+                            'stock' => 0,
+                        ]);
+                    }
                 }
             }
-        }
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
     }
@@ -88,13 +89,13 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
             'stock_quantity' => 'required|integer',
+            'stock_unit' => 'required|string|max:20',
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
 
             'variants.*.variant_name' => 'nullable|string|max:255',
             'variants.*.price' => 'nullable|numeric',
-            'variants.*.stock' => 'nullable|integer',
         ]);
 
         $imagePath = $product->image;
@@ -109,6 +110,7 @@ class ProductController extends Controller
             'description' => $request->description,
             'price' => $request->price,
             'stock_quantity' => $request->stock_quantity,
+            'stock_unit' => $request->stock_unit,
             'category_id' => $request->category_id,
             'image' => $imagePath,
         ]);

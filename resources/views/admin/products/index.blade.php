@@ -60,7 +60,7 @@
 
                                 <td>
                                     <span class="admin-badge brown">
-                                        {{ $product->stock_quantity }} stok
+                                        {{ $product->stock_label }}
                                     </span>
                                 </td>
 
@@ -99,7 +99,6 @@
                                                 <div class="variant-detail-card">
                                                     <strong>{{ $variant->variant_name }}</strong>
                                                     <span>Rp {{ number_format($variant->price, 0, ',', '.') }}</span>
-                                                    <span>Stok: {{ $variant->stock }}</span>
                                                 </div>
                                             @endforeach
                                         </div>

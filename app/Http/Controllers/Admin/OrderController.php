@@ -23,19 +23,44 @@ class OrderController extends Controller
     }
 
     public function update(Request $request, Order $order)
-    {
-        $request->validate([
-            'order_status' => 'required|string',
-            'payment_status' => 'required|string',
-        ]);
+{
+    $request->validate([
+        'payment_status' => 'required|in:pending,paid,failed',
+        'order_status' => 'required|in:pending,shipped,completed',
+    ]);
 
+    if ($order->order_status === 'completed') {
         $order->update([
-            'order_status' => $request->order_status,
             'payment_status' => $request->payment_status,
+            'order_status' => 'completed',
+            'completed_at' => $order->completed_at ?? now(),
         ]);
 
         return redirect()
             ->route('admin.orders.show', $order->id)
-            ->with('success', 'Status pesanan berhasil diperbarui.');
+            ->with('success', 'Pesanan sudah selesai dan tidak diubah kembali.');
+    }
+
+    $newStatus = $request->order_status;
+
+    $data = [
+        'payment_status' => $request->payment_status,
+        'order_status' => $newStatus,
+    ];
+
+    if ($newStatus === 'shipped' && !$order->shipped_at) {
+        $data['shipped_at'] = now();
+    }
+
+    if ($newStatus === 'pending') {
+        $data['shipped_at'] = null;
+        $data['completed_at'] = null;
+    }
+
+    $order->update($data);
+
+    return redirect()
+        ->route('admin.orders.show', $order->id)
+        ->with('success', 'Status pesanan berhasil diperbarui.');
     }
 }

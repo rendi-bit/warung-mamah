@@ -1233,3 +1233,311 @@
         width: 100%;
     }
 }
+
+/* =========================================================
+   PRODUCT CARD CLICKABLE
+   ========================================================= */
+
+.product-card-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    height: 100%;
+}
+
+.product-card-link:hover {
+    color: inherit;
+}
+
+.clickable-product-card {
+    cursor: pointer;
+    height: 100%;
+}
+
+.clickable-product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 24px 52px rgba(92, 46, 14, 0.18);
+}
+
+.clickable-product-card .product-title {
+    transition: color 0.25s ease;
+}
+
+.clickable-product-card:hover .product-title {
+    color: var(--primary-dark);
+}
+
+.clickable-product-card .product-card-image img {
+    transition: transform 0.4s ease;
+}
+
+.clickable-product-card:hover .product-card-image img {
+    transform: scale(1.06);
+}
+
+/* =========================================================
+   PRODUCT DETAIL LAYOUT FIX
+   ========================================================= */
+
+.product-detail-grid {
+    max-width: 1180px;
+    margin-left: auto;
+    margin-right: auto;
+    grid-template-columns: minmax(420px, 0.95fr) minmax(420px, 1.05fr);
+    gap: 34px;
+}
+
+.product-detail-image-box {
+    position: sticky;
+    top: 110px;
+}
+
+.product-detail-image-box img {
+    height: 560px;
+    object-fit: cover;
+}
+
+.product-detail-info {
+    padding: 32px;
+}
+
+.detail-title {
+    font-size: clamp(30px, 3vw, 40px);
+    line-height: 1.18;
+}
+
+.detail-price {
+    font-size: 32px;
+}
+
+.detail-short-desc {
+    line-height: 1.8;
+}
+
+.product-info-tabs-full {
+    max-width: 1180px;
+    margin: 30px auto 0;
+    padding: 26px;
+}
+
+.review-section {
+    max-width: 1180px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (max-width: 992px) {
+    .product-detail-grid {
+        grid-template-columns: 1fr;
+        max-width: 720px;
+    }
+
+    .product-detail-image-box {
+        position: static;
+    }
+
+    .product-detail-image-box img {
+        height: 460px;
+    }
+
+    .product-info-tabs-full,
+    .review-section {
+        max-width: 720px;
+    }
+}
+
+@media (max-width: 576px) {
+    .product-detail-image-box img {
+        height: 320px;
+    }
+
+    .product-detail-info {
+        padding: 22px;
+    }
+
+    .detail-meta-box {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================================
+   DETAIL PRODUK - ACTION BUTTONS MODERN
+   Isi: Keranjang icon, Favorit icon, Beli Sekarang, Kembali
+   ========================================================= */
+
+.product-action-modern {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+.icon-inline-form {
+    margin: 0;
+}
+
+/* tombol icon */
+.icon-action-btn {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    border: 1px solid #e6d7c8;
+    background: #fff;
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(60, 30, 10, 0.08);
+    transition: all 0.25s ease;
+}
+
+.icon-action-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+.icon-action-btn:hover {
+    transform: translateY(-3px);
+}
+
+/* tombol keranjang */
+.cart-action-btn:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 16px 30px rgba(120, 62, 18, 0.22);
+}
+
+/* tombol favorit */
+.favorite-action-btn {
+    color: #e11d48;
+    border-color: #f3c2cf;
+    background: #fff7fa;
+}
+
+.favorite-action-btn:hover {
+    background: #e11d48;
+    color: #fff;
+    border-color: #e11d48;
+    box-shadow: 0 16px 30px rgba(225, 29, 72, 0.22);
+}
+
+/* tombol beli sekarang */
+.btn-buy-now-modern {
+    height: 58px;
+    padding: 0 28px;
+    border-radius: 18px;
+    border: none;
+    background: linear-gradient(135deg, #8b4513, #a95a1a);
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 210px;
+    cursor: pointer;
+    box-shadow: 0 16px 32px rgba(120, 62, 18, 0.24);
+    transition: all 0.25s ease;
+}
+
+.btn-buy-now-modern:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 36px rgba(120, 62, 18, 0.32);
+}
+
+/* tombol kembali */
+.btn-back-modern {
+    height: 58px;
+    padding: 0 24px;
+    border-radius: 18px;
+    border: 1px solid #e6d7c8;
+    background: #fff;
+    color: #6b3d19;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 150px;
+    transition: all 0.25s ease;
+}
+
+.btn-back-modern:hover {
+    background: #f8f3ee;
+    transform: translateY(-2px);
+}
+
+/* responsive */
+@media (max-width: 768px) {
+    .product-action-modern {
+        gap: 12px;
+    }
+
+    .btn-buy-now-modern,
+    .btn-back-modern {
+        width: 100%;
+    }
+
+    .icon-action-btn {
+        width: 54px;
+        height: 54px;
+        border-radius: 16px;
+    }
+}
+
+/* =========================================================
+   QUANTITY CONTROL DETAIL PRODUK
+   ========================================================= */
+
+.quantity-control {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.qty-btn {
+    width: 46px;
+    height: 46px;
+    border: none;
+    background: #fff;
+    color: #999;
+    font-size: 24px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.qty-btn:hover {
+    background: #f7f7f7;
+    color: var(--primary-dark);
+}
+
+.qty-input {
+    width: 60px;
+    height: 46px;
+    border: none;
+    border-left: 1px solid #dcdcdc;
+    border-right: 1px solid #dcdcdc;
+    text-align: center;
+    font-size: 18px;
+    color: #777;
+    font-weight: 700;
+    background: white;
+    outline: none;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.qty-input[type=number] {
+    -moz-appearance: textfield;
+}

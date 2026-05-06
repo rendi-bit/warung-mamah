@@ -58,70 +58,65 @@
             </form>
         </div>
 
-        <div class="products-header-row">
-            <div>
-                <h2 class="products-heading">Semua Produk</h2>
-                <p class="text-muted">
-                    Menampilkan produk pilihan Toko Tika.
-                </p>
-            </div>
+        <div class="section-header">
+            @php
+                $selectedCategory = null;
+
+                if(request('category')) {
+                    $selectedCategory = $categories->firstWhere('id', request('category'));
+                }
+            @endphp
+
+            <h2>
+                {{ $selectedCategory ? 'Produk ' . $selectedCategory->category_name : 'Semua Produk' }}
+            </h2>
+
+            <p>
+                {{ $selectedCategory ? 'Menampilkan produk kategori ' . $selectedCategory->category_name . '.' : 'Menampilkan produk pilihan Toko Tika.' }}
+            </p>
         </div>
 
         @if ($products->count())
             <div class="product-grid">
+                @foreach($products as $product)
+                    <a href="{{ route('products.show', $product->slug) }}" class="product-card-link">
+                        <div class="product-card clickable-product-card">
+                            <div class="product-card-image">
+                                @if($product->image)
+                                    <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}">
+                                @else
+                                    <img src="https://via.placeholder.com/400x300?text=Produk" alt="{{ $product->name }}">
+                                @endif
+                            </div>
 
-                @foreach ($products as $product)
-                    <div class="product-card">
+                            <div class="product-card-body">
+                                <div class="product-top-row">
+                                    <span class="product-category">{{ $product->category->category_name ?? '-' }}</span>
 
-                        <div class="product-card-image">
-                            @if ($product->image)
-                                <img 
-                                    src="{{ asset('storage/' . $product->image) }}" 
-                                    alt="{{ $product->name }}"
-                                >
-                            @else
-                                <img 
-                                    src="https://via.placeholder.com/400x300?text=Produk" 
-                                    alt="{{ $product->name }}"
-                                >
-                            @endif
+                                    @if($product->variants->count())
+                                        <span class="product-badge">Punya Varian</span>
+                                    @else
+                                        <span class="product-badge">Ready</span>
+                                    @endif
+                                </div>
+
+                                <h3 class="product-title">{{ $product->name }}</h3>
+
+                                <div class="product-price">
+                                    @if($product->variants->count())
+                                        Mulai dari Rp {{ number_format($product->display_price, 0, ',', '.') }}
+                                    @else
+                                        Rp {{ number_format($product->display_price, 0, ',', '.') }}
+                                    @endif
+                                </div>
+
+                                <div class="product-meta">
+                                    Stok tersedia: {{ $product->stock_label ?? $product->stock_quantity }}
+                                </div>
+                            </div>
                         </div>
-
-                        <div class="product-card-body">
-
-                            <div class="product-top-row">
-                                <span class="product-category">
-                                    {{ $product->category->category_name ?? '-' }}
-                                </span>
-
-                                <span class="product-badge">Ready</span>
-                            </div>
-
-                            <h3 class="product-title">
-                                {{ $product->name }}
-                            </h3>
-
-                            <div class="product-price">
-                                Rp {{ number_format($product->price, 0, ',', '.') }}
-                            </div>
-
-                            <div class="product-meta">
-                                Stok tersedia: {{ $product->stock_quantity }}
-                            </div>
-
-                            <div class="product-card-actions">
-                                <a 
-                                    href="{{ route('products.show', $product->slug) }}" 
-                                    class="btn btn-primary"
-                                >
-                                    Lihat Detail
-                                </a>
-                            </div>
-
-                        </div>
-                    </div>
+                    </a>
                 @endforeach
-
             </div>
 
             @if ($products->hasPages())

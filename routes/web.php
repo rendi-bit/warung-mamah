@@ -6,20 +6,25 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\MidtransCallbackController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\ChatbotController;
-use App\Models\Order;
-use App\Models\Product;
-use App\Models\Category;
-use Illuminate\Support\Carbon;
-
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+Route::get('/search-products', [ProductController::class, 'search'])
+    ->name('products.search');
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
+
+// Halaman Informasi Website
+Route::view('/tentang-kami', 'pages.about')->name('pages.about');
+Route::view('/faq', 'pages.faq')->name('pages.faq');
+Route::view('/kebijakan-privasi', 'pages.privacy')->name('pages.privacy');
+Route::view('/syarat-ketentuan', 'pages.terms')->name('pages.terms');
+Route::view('/cara-belanja', 'pages.how-to-shop')->name('pages.how-to-shop');
+Route::view('/kontak-kami', 'pages.contact')->name('pages.contact');
 
 // Tambahkan route untuk /settings
 Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
@@ -38,6 +43,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/my-orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
     Route::get('/my-orders/{id}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
+    Route::patch('/my-orders/{order}/complete', [\App\Http\Controllers\OrderController::class, 'complete'])->name('orders.complete');
 
     Route::get('/dashboard', function () {
         return redirect()->route('home');
@@ -54,27 +60,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', function () {
-        $months = collect(range(5, 0))->map(function ($offset) {
-            return Carbon::now()->subMonths($offset);
-        })->push(Carbon::now());
-
-        $monthlyRevenue = $months->map(function ($month) {
-            return (float) Order::whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
-                ->sum('grand_total');
-        });
-
-        $chartLabels = $months->map(fn ($month) => $month->translatedFormat('M Y'));
-
-        return view('admin.dashboard', [
-            'totalOrders' => Order::count(),
-            'totalProducts' => Product::count(),
-            'totalCategories' => Category::count(),
-            'monthlyRevenueLabels' => $chartLabels,
-            'monthlyRevenueData' => $monthlyRevenue,
-        ]);
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('/categories', AdminCategoryController::class);
     Route::resource('/products', AdminProductController::class);
@@ -97,8 +83,5 @@ Route::middleware('auth')->group(function () {
     
                                                                                                                               
 });
-
-Route::post('/midtrans/callback', [MidtransCallbackController::class, 'handle'])->name('midtrans.callback');
-
 
 require __DIR__.'/auth.php';

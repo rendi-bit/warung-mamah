@@ -36,9 +36,26 @@
                         <input type="number" name="price" value="{{ old('price', $product->price) }}" required>
                     </div>
 
-                    <div class="settings-input-group">
-                        <label>Stok Utama</label>
-                        <input type="number" name="stock_quantity" value="{{ old('stock_quantity', $product->stock_quantity) }}" required>
+                    <div class="stock-input-grid">
+                        <div>
+                            <label>Stok Utama</label>
+                            <input type="number" name="stock_quantity" value="{{ old('stock_quantity', $product->stock_quantity) }}" required>
+                        </div>
+
+                        <div>
+                            <label>Satuan Stok</label>
+                            <select name="stock_unit" required>
+                                @php
+                                    $units = ['kg', 'gram', 'pcs', 'pack', 'dus', 'liter', 'botol', 'ikat', 'bungkus'];
+                                @endphp
+
+                                @foreach($units as $unit)
+                                    <option value="{{ $unit }}" {{ old('stock_unit', $product->stock_unit ?? 'pcs') == $unit ? 'selected' : '' }}>
+                                        {{ ucfirst($unit) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
                     <div class="settings-input-group full-width">
@@ -61,13 +78,11 @@
                             <div class="variant-row">
                                 <input type="text" name="variants[{{ $index }}][variant_name]" value="{{ $variant->variant_name }}" placeholder="Contoh: 1/4 kg">
                                 <input type="number" name="variants[{{ $index }}][price]" value="{{ $variant->price }}" placeholder="Harga">
-                                <input type="number" name="variants[{{ $index }}][stock]" value="{{ $variant->stock }}" placeholder="Stok">
                             </div>
                         @empty
                             <div class="variant-row">
                                 <input type="text" name="variants[0][variant_name]" placeholder="Contoh: 1/4 kg">
                                 <input type="number" name="variants[0][price]" placeholder="Harga">
-                                <input type="number" name="variants[0][stock]" placeholder="Stok">
                             </div>
                         @endforelse
                     </div>
@@ -98,7 +113,6 @@ document.addEventListener('DOMContentLoaded', function () {
         row.innerHTML = `
             <input type="text" name="variants[${variantIndex}][variant_name]" placeholder="Contoh: 1/2 kg">
             <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga">
-            <input type="number" name="variants[${variantIndex}][stock]" placeholder="Stok">
         `;
 
         wrapper.appendChild(row);

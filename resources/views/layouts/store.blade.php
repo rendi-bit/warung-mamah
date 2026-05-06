@@ -1,3 +1,19 @@
+@php
+    $isAdmin = auth()->check()
+        && auth()->user()->role
+        && auth()->user()->role->role_name === 'admin';
+
+    $cartCount = 0;
+
+    if (auth()->check() && !$isAdmin) {
+        $cart = \App\Models\Cart::with('items')
+            ->where('user_id', auth()->id())
+            ->first();
+
+        $cartCount = $cart ? $cart->items->sum('quantity') : 0;
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,11 +43,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+
 @php
-    $whatsappNumber = '6281525874869';
+    $whatsappNumber = '6282125052233';
     $whatsappMessage = urlencode('Halo admin TOKO TIKA, saya ingin bertanya tentang produk dan pemesanan.');
 @endphp
 
+@if(!$isAdmin)
 <a href="https://wa.me/{{ $whatsappNumber }}?text={{ $whatsappMessage }}"
    class="whatsapp-float"
    target="_blank"
@@ -39,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <i class="fab fa-whatsapp"></i>
     <span>Chat WhatsApp</span>
 </a>
+@endif
 <body>
     @php
         $isAdmin = auth()->check() && auth()->user()->role && auth()->user()->role->role_name === 'admin';
@@ -46,7 +65,9 @@ document.addEventListener('DOMContentLoaded', function () {
     <header class="site-header">
         <div class="container site-nav">
             <div class="brand">
-                <span class="brand-badge">WM</span>
+                <span class="brand-badge brand-logo-image">
+                    <img src="{{ asset('storage/avatars/mamah.jpeg') }}" alt="Logo Toko Tika">
+                </span>
                 <div>
                     <h1>TOKO TIKA</h1>
                     <p>UMKM Commerce Platform</p>
@@ -54,41 +75,86 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
 
             <nav class="nav-menu">
-                <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}">Home</a>
-                <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') ? 'is-active' : '' }}">Produk</a>
-
                 @auth
-                    <a href="{{ route('orders.index') }}" class="{{ request()->routeIs('orders.*') ? 'is-active' : '' }}">Pesanan Saya</a>
-                    <a href="{{ route('cart.index') }}" class="{{ request()->routeIs('cart.*') ? 'is-active' : '' }}">Keranjang</a>
-
                     @if($isAdmin)
-                        <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.*') ? 'is-active' : '' }}">Admin</a>
+                        <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'is-active' : '' }}">
+                            Dashboard
+                        </a>
+
+                        <a href="{{ route('admin.products.index') }}" class="{{ request()->routeIs('admin.products.*') ? 'is-active' : '' }}">
+                            Produk
+                        </a>
+                    @else
+                        <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}">
+                            Home
+                        </a>
+
+                        <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') ? 'is-active' : '' }}">
+                            Produk
+                        </a>
+
+                        <a href="{{ route('orders.index') }}" class="{{ request()->routeIs('orders.*') ? 'is-active' : '' }}">
+                            Pesanan Saya
+                        </a>
+
+                        <a href="{{ route('cart.index') }}" class="nav-cart-link {{ request()->routeIs('cart.*') ? 'is-active' : '' }}">
+                            <span>Keranjang</span>
+
+                            @if($cartCount > 0)
+                                <span class="cart-badge">{{ $cartCount }}</span>
+                            @endif
+                        </a>
                     @endif
+                @else
+                    <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}">
+                        Home
+                    </a>
+
+                    <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') ? 'is-active' : '' }}">
+                        Produk
+                    </a>
                 @endauth
+
+                @if(!$isAdmin)
+                    <div class="navbar-search">
+                        <div class="navbar-search-box">
+                            <i class="fas fa-search"></i>
+
+                            <input
+                                type="text"
+                                id="navbarSearchInput"
+                                placeholder="Cari produk atau kategori..."
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="search-result-box" id="searchResultBox"></div>
+                    </div>
+                @endif
             </nav>
 
             <div class="nav-actions">
-    @auth
-        <div class="profile-dropdown" id="profileDropdown">
-            <button type="button" class="profile-trigger" id="profileTrigger">
-            <div class="profile-avatar">
-    @if(auth()->user()->avatar)
-        <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}">
-    @else
-        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-    @endif
-</div>
-            </button>
+                @auth
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <button type="button" class="profile-trigger" id="profileTrigger">
+                        <div class="profile-avatar">
+                @if(auth()->user()->avatar)
+                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}">
+                @else
+                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                @endif
+            </div>
+                        </button>
 
-            <div class="profile-menu" id="profileMenu">
-                <div class="profile-menu-header">
-                <div class="profile-avatar large">
-    @if(auth()->user()->avatar)
-        <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}">
-    @else
-        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-    @endif
-</div>
+                        <div class="profile-menu" id="profileMenu">
+                            <div class="profile-menu-header">
+                            <div class="profile-avatar large">
+                @if(auth()->user()->avatar)
+                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}">
+                @else
+                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                @endif
+            </div>
                     <div>
                         <h4>{{ auth()->user()->name }}</h4>
                         <p>{{ auth()->user()->email }}</p>
@@ -96,28 +162,31 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
 
                 <div class="profile-menu-links">
-                    <a href="{{ route('settings.index') }}">
-                        <i class="fas fa-gear"></i>
-                        <span>Pengaturan</span>
-                    </a>
-
-                     <a href="{{ route('wishlist.index') }}">
-                        <i class="fas fa-heart" style="color:#ef4444;"></i>
-                        <span>Favorit Saya</span>
-                    </a>
-
-
-                    @if(auth()->user()->role && auth()->user()->role->role_name === 'admin')
+                    @if($isAdmin)
                         <a href="{{ route('admin.dashboard') }}">
                             <i class="fas fa-chart-line"></i>
-                            <span>Dashboard Admin</span>
+                            <span>Dashboard</span>
+                        </a>
+
+                        <a href="{{ route('admin.products.index') }}">
+                            <i class="fas fa-box-open"></i>
+                            <span>Produk</span>
+                        </a>
+                    @else
+                        <a href="{{ route('settings.index') }}">
+                            <i class="fas fa-gear"></i>
+                            <span>Pengaturan</span>
+                        </a>
+
+                        <a href="{{ route('wishlist.index') }}">
+                            <i class="fas fa-heart"></i>
+                            <span>Favorit Saya</span>                    
+                        </a>
+                        <a href="{{ route('orders.index') }}">
+                            <i class="fas fa-bag-shopping"></i>
+                            <span>Pesanan Saya</span>
                         </a>
                     @endif
-
-                    <a href="{{ route('orders.index') }}">
-                        <i class="fas fa-bag-shopping"></i>
-                        <span>Pesanan Saya</span>
-                    </a>
                 </div>
 
                 <div class="profile-menu-footer">
@@ -145,16 +214,28 @@ document.addEventListener('DOMContentLoaded', function () {
             <button type="button" id="navMobileClose" aria-label="Close menu">✕</button>
         </div>
         <nav class="mobile-drawer-links">
-            <a href="{{ route('home') }}">Home</a>
-            <a href="{{ route('products.index') }}">Produk</a>
-            @auth
-                <a href="{{ route('orders.index') }}">Pesanan Saya</a>
-                <a href="{{ route('cart.index') }}">Keranjang</a>
+           
+        @auth
                 @if($isAdmin)
-                    <a href="{{ route('admin.dashboard') }}">Admin</a>
-                @endif
-                <a href="{{ route('profile.edit') }}">Profil</a>
+                    <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+                    <a href="{{ route('admin.products.index') }}">Produk</a>
+                @else
+                    <a href="{{ route('home') }}">Home</a>
+                    <a href="{{ route('products.index') }}">Produk</a>
+                    <a href="{{ route('orders.index') }}">Pesanan Saya</a>
+                    <a href="{{ route('cart.index') }}" class="mobile-cart-link">
+                        <span>Keranjang</span>
+                        @if($cartCount > 0)
+                            <span class="cart-badge">{{ $cartCount }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('wishlist.index') }}">Favorit Saya</a>
+                    <a href="{{ route('settings.index') }}">Pengaturan</a>
+               
+                    @endif
             @else
+                <a href="{{ route('home') }}">Home</a>
+                <a href="{{ route('products.index') }}">Produk</a>
                 <a href="{{ route('login') }}">Login</a>
                 <a href="{{ route('register') }}">Register</a>
             @endauth
@@ -175,17 +256,52 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="toast-wrap" id="toastWrap">
             @if(session('success'))
                 <div class="toast toast-success" role="status">
-                    <strong>Berhasil</strong>
-                    <p>{{ session('success') }}</p>
-                    <button type="button" class="toast-close" aria-label="Close">✕</button>
+                    <div class="toast-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+
+                    <div class="toast-content">
+                        <strong>Berhasil</strong>
+                        <p>{{ session('success') }}</p>
+                    </div>
+
+                    <button type="button" class="toast-close" aria-label="Close">
+                        <i class="fas fa-xmark"></i>
+                    </button>
                 </div>
             @endif
 
             @if(session('error'))
                 <div class="toast toast-error" role="alert">
-                    <strong>Terjadi Kendala</strong>
-                    <p>{{ session('error') }}</p>
-                    <button type="button" class="toast-close" aria-label="Close">✕</button>
+                    <div class="toast-icon">
+                        <i class="fas fa-triangle-exclamation"></i>
+                    </div>
+
+                    <div class="toast-content">
+                        <strong>Terjadi Kendala</strong>
+                        <p>{{ session('error') }}</p>
+                    </div>
+
+                    <button type="button" class="toast-close" aria-label="Close">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </div>
+            @endif
+
+            @if(session('info'))
+                <div class="toast toast-info" role="status">
+                    <div class="toast-icon">
+                        <i class="fas fa-circle-info"></i>
+                    </div>
+
+                    <div class="toast-content">
+                        <strong>Informasi</strong>
+                        <p>{{ session('info') }}</p>
+                    </div>
+
+                    <button type="button" class="toast-close" aria-label="Close">
+                        <i class="fas fa-xmark"></i>
+                    </button>
                 </div>
             @endif
         </div>
@@ -215,14 +331,24 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-
+    @if(!$isAdmin)
     <footer class="site-footer">
-        <div class="container footer-grid">
+        <div class="container footer-grid footer-grid-modern">
             <div class="footer-brand">
-                <h3>TOKO TIKA</h3>
+                <div class="footer-logo-row">
+                    <span class="footer-logo">
+                        <img src="{{ asset('storage/avatars/mamah.jpeg') }}" alt="Logo Toko Tika">
+                    </span>
+
+                    <div>
+                        <h3>TOKO TIKA</h3>
+                        <small>UMKM Commerce Platform</small>
+                    </div>
+                </div>
+
                 <p>
                     Toko UMKM modern yang menyediakan produk pilihan dengan kualitas terbaik
-                    untuk kebutuhan harian masyarakat.
+                    untuk kebutuhan harian masyarakat, khususnya area Bekasi Timur.
                 </p>
             </div>
 
@@ -230,49 +356,91 @@ document.addEventListener('DOMContentLoaded', function () {
                 <h4>Navigasi</h4>
                 <a href="{{ route('home') }}">Home</a>
                 <a href="{{ route('products.index') }}">Produk</a>
+
                 @auth
-                    <a href="{{ route('orders.index') }}">Pesanan</a>
+                    <a href="{{ route('orders.index') }}">Pesanan Saya</a>
+                    <a href="{{ route('wishlist.index') }}">Favorit</a>
                 @endauth
-                @auth
-                    <a href="{{ route('wishlist.index') }}">Favorit ❤️</a>
-                @endauth
+
+                @guest
+                    <a href="{{ route('login') }}">Login</a>
+                    <a href="{{ route('register') }}">Daftar</a>
+                @endguest
             </div>
 
             <div class="footer-col">
-                <h4>Kontak</h4>
-                <p>Email: rendiprano15@gmail.com</p>
-                <p>Telepon: 0821-2505-2233</p>
-                <p>Alamat: Pasar Rawa Kalong, Bekasi</p>
+                <h4>Informasi</h4>
+                <a href="{{ route('pages.about') }}">Tentang Kami</a>
+                <a href="{{ route('pages.faq') }}">FAQ</a>
+                <a href="{{ route('pages.how-to-shop') }}">Cara Belanja</a>
+                <a href="{{ route('pages.privacy') }}">Kebijakan Privasi</a>
+                <a href="{{ route('pages.terms') }}">Syarat & Ketentuan</a>
+                <a href="{{ route('pages.contact') }}">Kontak Kami</a>
             </div>
 
-            <div class="footer-col social-col">
-                <h4>Ikuti Kami</h4>
-                <div class="social-icons">
-                    <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="social-icon"><i class="fab fa-pinterest-p"></i></a>
-                    <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
-                    <a href="#" class="social-icon"><i class="fab fa-tiktok"></i></a>
+            <div class="footer-col footer-contact">
+                <h4>Kontak</h4>
+
+                <div class="footer-contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <span>Email</span>
+                        <strong>rendiprano15@gmail.com</strong>
+                    </div>
+                </div>
+
+                <div class="footer-contact-item">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <span>WhatsApp</span>
+                        <strong>0821-2505-2233</strong>
+                    </div>
+                </div>
+
+                <div class="footer-contact-item">
+                    <i class="fas fa-location-dot"></i>
+                    <div>
+                        <span>Alamat</span>
+                        <strong>Pasar Rawa Kalong, Bekasi</strong>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="container footer-bottom">
             <p>© 2026 TOKO TIKA. All rights reserved.</p>
+
+            <div class="footer-bottom-links">
+                <a href="{{ route('pages.privacy') }}">Privasi</a>
+                <a href="{{ route('pages.terms') }}">Ketentuan</a>
+            </div>
         </div>
     </footer>
+    @endif
 
+    @if(!$isAdmin)
     <div class="chatbot-toggle" id="chatbotToggle">
-    💬
-</div>
+        💬
+    </div>
+    @endif
 
     @auth
-    <nav class="mobile-quick-actions">
-        <a href="{{ route('home') }}">Home</a>
-        <a href="{{ route('products.index') }}">Produk</a>
-        <a href="{{ route('cart.index') }}">Keranjang</a>
-        <a href="{{ route('orders.index') }}">Pesanan</a>
+    <nav class="mobile-quick-actions {{ $isAdmin ? 'admin-quick-actions' : '' }}">
+        @if($isAdmin)
+            <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+            <a href="{{ route('admin.products.index') }}">Produk</a>
+        @else
+            <a href="{{ route('home') }}">Home</a>
+            <a href="{{ route('products.index') }}">Produk</a>
+            <a href="{{ route('cart.index') }}" class="mobile-quick-cart">
+                Keranjang
+
+                @if($cartCount > 0)
+                    <span class="cart-badge mobile-cart-badge">{{ $cartCount }}</span>
+                @endif
+            </a>
+            <a href="{{ route('orders.index') }}">Pesanan</a>
+        @endif
     </nav>
     @endauth
 
@@ -297,7 +465,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const themeToggle = document.getElementById('themeToggle');
     const navMobileToggle = document.getElementById('navMobileToggle');
     const navMobileClose = document.getElementById('navMobileClose');
     const mobileDrawer = document.getElementById('mobileDrawer');
@@ -310,25 +477,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const chatbotInput = document.getElementById('chatbotInput');
     const chatbotBody = document.getElementById('chatbotBody');
     const toastWrap = document.getElementById('toastWrap');
-
-    const setTheme = (theme) => {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('wm-theme', theme);
-        if (themeToggle) {
-            themeToggle.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
-        }
-    };
-
-    const storedTheme = localStorage.getItem('wm-theme');
-    const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    setTheme(storedTheme || preferredTheme);
-
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function () {
-            const activeTheme = document.documentElement.getAttribute('data-theme') || 'light';
-            setTheme(activeTheme === 'dark' ? 'light' : 'dark');
-        });
-    }
 
     const toggleDrawer = (isOpen) => {
         if (!mobileDrawer || !mobileDrawerBackdrop) return;
@@ -477,6 +625,93 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+const navbarSearchInput = document.getElementById('navbarSearchInput');
+const searchResultBox = document.getElementById('searchResultBox');
+
+let searchTimer = null;
+
+if (navbarSearchInput && searchResultBox) {
+    navbarSearchInput.addEventListener('input', function () {
+        const keyword = this.value.trim();
+
+        clearTimeout(searchTimer);
+
+        if (keyword.length < 2) {
+            searchResultBox.classList.remove('active');
+            searchResultBox.innerHTML = '';
+            return;
+        }
+
+        searchTimer = setTimeout(async function () {
+            try {
+                const response = await fetch(`{{ route('products.search') }}?q=${encodeURIComponent(keyword)}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const products = await response.json();
+
+                if (!products.length) {
+                    searchResultBox.innerHTML = `
+                        <div class="search-empty">
+                            Produk tidak ditemukan.
+                        </div>
+                    `;
+                    searchResultBox.classList.add('active');
+                    return;
+                }
+
+                searchResultBox.innerHTML = products.map(function (product) {
+                    const image = product.image
+                        ? `<img src="${product.image}" alt="${product.name}">`
+                        : `<div class="search-product-placeholder"><i class="fas fa-box"></i></div>`;
+
+                    return `
+                        <a href="${product.url}" class="search-result-item">
+                            <div class="search-result-image">
+                                ${image}
+                            </div>
+
+                            <div class="search-result-content">
+                                <strong>${product.name}</strong>
+                                <span>${product.category}</span>
+                                <small>${product.price}</small>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
+
+                searchResultBox.classList.add('active');
+            } catch (error) {
+                searchResultBox.innerHTML = `
+                    <div class="search-empty">
+                        Terjadi kesalahan saat mencari produk.
+                    </div>
+                `;
+                searchResultBox.classList.add('active');
+            }
+        }, 300);
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.navbar-search')) {
+            searchResultBox.classList.remove('active');
+        }
+    });
+
+    navbarSearchInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+
+            const keyword = navbarSearchInput.value.trim();
+
+            if (keyword.length > 0) {
+                window.location.href = `{{ route('products.index') }}?search=${encodeURIComponent(keyword)}`;
+            }
+        }
+    });
+}
 </script>   
 </body>
 </html>

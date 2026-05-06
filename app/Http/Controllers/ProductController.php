@@ -9,21 +9,32 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    public function index(Request $request)
+   public function index(Request $request)
     {
         $query = Product::with(['category', 'variants', 'reviews'])
             ->where('status', 'active');
 
-        if ($request->category) {
+        if ($request->filled('category')) {
             $query->where('category_id', $request->category);
         }
 
+        if ($request->filled('search')) {
+            $keyword = $request->search;
+
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'ILIKE', '%' . $keyword . '%')
+                    ->orWhereHas('category', function ($categoryQuery) use ($keyword) {
+                        $categoryQuery->where('category_name', 'ILIKE', '%' . $keyword . '%');
+                    });
+            });
+        }
+
         $products = $query->latest()->paginate(12)->withQueryString();
-        $categories = Category::all();
+
+        $categories = Category::latest()->get();
 
         return view('products.index', compact('products', 'categories'));
     }
-
     public function show($slug)
     {
         $product = Product::with(['category', 'variants', 'reviews.user'])
@@ -66,5 +77,32 @@ class ProductController extends Controller
             'reviews',
             'avgRating'
         ));
+    }
+
+    public function search(Request $request)
+    {
+        $keyword = $request->get('q');
+
+        $products = Product::with('category')
+            ->where('status', 'active')
+            ->where(function ($query) use ($keyword) {
+                $query->where('name', 'ILIKE', '%' . $keyword . '%')
+                    ->orWhereHas('category', function ($categoryQuery) use ($keyword) {
+                        $categoryQuery->where('category_name', 'ILIKE', '%' . $keyword . '%');
+                    });
+            })
+            ->latest()
+            ->limit(8)
+            ->get();
+
+        return response()->json($products->map(function ($product) {
+            return [
+                'name' => $product->name,
+                'category' => $product->category->category_name ?? 'Tanpa Kategori',
+                'price' => 'Rp ' . number_format($product->display_price ?? $product->price, 0, ',', '.'),
+                'image' => $product->image ? asset('storage/' . $product->image) : null,
+                'url' => route('products.show', $product->slug),
+            ];
+        }));
     }
 }   

@@ -19,6 +19,10 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
+        @if(session('error'))
+            <div class="alert alert-error">{{ session('error') }}</div>
+        @endif
+
         <div class="checkout-grid">
             <div class="admin-action-card">
                 <h3>Informasi Pesanan</h3>
@@ -45,11 +49,63 @@
                     </div>
 
                     <div class="checkout-item-row">
+                        <strong>Metode Pembayaran</strong>
+                        <span>
+                            @if($order->payment_method === 'qris')
+                                <span class="admin-badge blue">QRIS</span>
+                            @else
+                                <span class="admin-badge orange">COD</span>
+                            @endif
+                        </span>
+                    </div>
+
+                    <div class="checkout-item-row">
+                        <strong>Status Pembayaran</strong>
+                        <span>
+                            @if($order->payment_method === 'cod')
+                                <span class="admin-badge orange">Bayar di Tempat</span>
+                            @else
+                                <span class="admin-badge {{ $order->payment_status === 'paid' ? 'green' : 'yellow' }}">
+                                    {{ ucfirst($order->payment_status) }}
+                                </span>
+                            @endif
+                        </span>
+                    </div>
+
+                    <div class="checkout-item-row">
                         <strong>Alamat</strong>
                         <span>{{ $order->shipping_address }}</span>
                     </div>
                 </div>
             </div>
+
+            @if($order->has_waiting_restock)
+                <div class="admin-action-card restock-admin-alert">
+                    <h3>Pesanan Menunggu Restok</h3>
+                    <p>
+                        Pesanan ini memiliki item yang jumlah pembeliannya melebihi stok tersedia.
+                        Admin perlu menunggu stok masuk sebelum pesanan diproses penuh.
+                    </p>
+
+                    @if($order->restock_note)
+                        <small>{{ $order->restock_note }}</small>
+                    @endif
+
+                    <form
+                        action="{{ route('admin.orders.fulfillRestock', $order->id) }}"
+                        method="POST"
+                        style="margin-top: 16px;"
+                        onsubmit="return confirm('Pastikan stok sudah tersedia. Tandai restok pesanan ini sebagai terpenuhi?')"
+                    >
+                        @csrf
+                        @method('PATCH')
+
+                        <button type="submit" class="btn btn-primary">
+                            Tandai Restok Terpenuhi
+                        </button>
+                    </form>
+                </div>
+            @endif
 
             <div class="admin-action-card">
                 <h3>Update Status</h3>
@@ -102,6 +158,7 @@
                             <th>Varian</th>
                             <th>Harga</th>
                             <th>Jumlah</th>
+                            <th>Status Restok</th>
                             <th>Subtotal</th>
                         </tr>
                     </thead>
@@ -109,10 +166,34 @@
                     <tbody>
                         @foreach($order->items as $item)
                             <tr>
-                                <td>{{ $item->product->name ?? '-' }}</td>
+                                <td>
+                                    <strong>{{ $item->product->name ?? '-' }}</strong>
+
+                                    @if($item->is_waiting_restock)
+                                        <div class="item-restock-note">
+                                            Kurang {{ $item->waiting_restock_quantity }}
+                                            {{ $item->product->stock_unit ?? 'item' }}
+                                            • Estimasi {{ $item->product->restock_estimation ?? '1 hari' }}
+                                        </div>
+                                    @endif
+                                </td>
+
                                 <td>{{ $item->variant->variant_name ?? '-' }}</td>
+
                                 <td>Rp {{ number_format($item->price, 0, ',', '.') }}</td>
-                                <td>{{ $item->quantity }}</td>
+
+                                <td>
+                                    {{ $item->quantity }} {{ $item->product->stock_unit ?? 'item' }}
+                                </td>
+
+                                <td>
+                                    @if($item->is_waiting_restock)
+                                        <span class="admin-badge orange">Menunggu Restok</span>
+                                    @else
+                                        <span class="admin-badge green">Stok Aman</span>
+                                    @endif
+                                </td>
+
                                 <td>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
                             </tr>
                         @endforeach

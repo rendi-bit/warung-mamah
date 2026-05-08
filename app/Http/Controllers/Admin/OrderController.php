@@ -23,44 +23,77 @@ class OrderController extends Controller
     }
 
     public function update(Request $request, Order $order)
-{
-    $request->validate([
-        'payment_status' => 'required|in:pending,paid,failed',
-        'order_status' => 'required|in:pending,shipped,completed',
-    ]);
+    {
+        $request->validate([
+            'payment_status' => 'required|in:pending,paid,failed',
+            'order_status' => 'required|in:pending,shipped,completed',
+        ]);
 
-    if ($order->order_status === 'completed') {
-        $order->update([
+        if ($order->order_status === 'completed') {
+            $order->update([
+                'payment_status' => $request->payment_status,
+                'order_status' => 'completed',
+                'completed_at' => $order->completed_at ?? now(),
+            ]);
+
+            return redirect()
+                ->route('admin.orders.show', $order->id)
+                ->with('success', 'Pesanan sudah selesai dan tidak diubah kembali.');
+        }
+
+        if ($request->order_status === 'shipped' && $order->has_waiting_restock) {
+            return redirect()
+                ->route('admin.orders.show', $order->id)
+                ->with('error', 'Pesanan belum bisa dikirim karena masih ada item yang menunggu restok.');
+        }
+
+        $newStatus = $request->order_status;
+
+        $data = [
             'payment_status' => $request->payment_status,
-            'order_status' => 'completed',
-            'completed_at' => $order->completed_at ?? now(),
+            'order_status' => $newStatus,
+        ];
+
+        if ($newStatus === 'shipped' && !$order->shipped_at) {
+            $data['shipped_at'] = now();
+        }
+
+        if ($newStatus === 'pending') {
+            $data['shipped_at'] = null;
+            $data['completed_at'] = null;
+        }
+
+        $order->update($data);
+
+        return redirect()
+            ->route('admin.orders.show', $order->id)
+            ->with('success', 'Status pesanan berhasil diperbarui.');
+    }
+
+    public function fulfillRestock(Order $order)
+    {
+        if (!$order->has_waiting_restock) {
+            return redirect()
+                ->route('admin.orders.show', $order->id)
+                ->with('success', 'Pesanan ini sudah tidak memiliki item yang menunggu restok.');
+        }
+
+        foreach ($order->items as $item) {
+            if ($item->is_waiting_restock) {
+                $item->update([
+                    'is_waiting_restock' => false,
+                    'waiting_restock_quantity' => 0,
+                ]);
+            }
+        }
+
+        $order->update([
+            'has_waiting_restock' => false,
+            'restock_note' => null,
         ]);
 
         return redirect()
             ->route('admin.orders.show', $order->id)
-            ->with('success', 'Pesanan sudah selesai dan tidak diubah kembali.');
-    }
-
-    $newStatus = $request->order_status;
-
-    $data = [
-        'payment_status' => $request->payment_status,
-        'order_status' => $newStatus,
-    ];
-
-    if ($newStatus === 'shipped' && !$order->shipped_at) {
-        $data['shipped_at'] = now();
-    }
-
-    if ($newStatus === 'pending') {
-        $data['shipped_at'] = null;
-        $data['completed_at'] = null;
-    }
-
-    $order->update($data);
-
-    return redirect()
-        ->route('admin.orders.show', $order->id)
-        ->with('success', 'Status pesanan berhasil diperbarui.');
+            ->with('success', 'Restok pesanan sudah ditandai terpenuhi. Pesanan sekarang bisa diproses ke Shipping.');
     }
 }

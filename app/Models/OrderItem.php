@@ -13,7 +13,9 @@ class OrderItem extends Model
         'quantity',
         'price',
         'subtotal',
-    ];
+        'is_waiting_restock',
+        'waiting_restock_quantity',
+    ]; 
 
     public function order()
     {

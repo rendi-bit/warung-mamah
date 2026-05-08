@@ -21,11 +21,14 @@ class Order extends Model
         'house_landmark',
         'delivery_method',
         'notes',
+        'has_waiting_restock',
+        'restock_note',
     ];
     
     protected $casts = [
         'shipped_at' => 'datetime',
         'completed_at' => 'datetime',
+        'has_waiting_restock' => 'boolean',
     ];
 
     public function user()

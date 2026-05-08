@@ -132,9 +132,20 @@
 
                             <div class="admin-mini-right">
                                 <b>Rp {{ number_format($order->grand_total, 0, ',', '.') }}</b>
-                                <small class="admin-status-pill {{ $order->payment_status === 'paid' ? 'green' : 'yellow' }}">
-                                    {{ ucfirst($order->payment_status) }}
+
+                                <small class="admin-status-pill {{ $order->payment_method === 'qris' ? 'blue' : 'orange' }}">
+                                    {{ $order->payment_method === 'qris' ? 'QRIS' : 'COD' }}
                                 </small>
+
+                                @if($order->payment_method === 'cod')
+                                    <small class="admin-status-pill orange">
+                                        Bayar di Tempat
+                                    </small>
+                                @else
+                                    <small class="admin-status-pill {{ $order->payment_status === 'paid' ? 'green' : 'yellow' }}">
+                                        {{ ucfirst($order->payment_status) }}
+                                    </small>
+                                @endif
                             </div>
                         </div>
                     @empty

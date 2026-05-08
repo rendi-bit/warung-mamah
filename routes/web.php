@@ -43,7 +43,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/my-orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
     Route::get('/my-orders/{id}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
+    Route::get('/my-orders/{order}/invoice', [\App\Http\Controllers\OrderController::class, 'invoice'])->name('orders.invoice');
+
     Route::patch('/my-orders/{order}/complete', [\App\Http\Controllers\OrderController::class, 'complete'])->name('orders.complete');
+    Route::patch('/my-orders/{order}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
 
     Route::get('/dashboard', function () {
         return redirect()->route('home');
@@ -64,6 +67,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::resource('/categories', AdminCategoryController::class);
     Route::resource('/products', AdminProductController::class);
+
+Route::patch('/orders/{order}/fulfill-restock', [AdminOrderController::class, 'fulfillRestock'])
+    ->name('orders.fulfillRestock');
+
     Route::resource('/orders', AdminOrderController::class)->only(['index', 'show', 'update']);
 });
 

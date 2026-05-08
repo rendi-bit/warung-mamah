@@ -30,8 +30,12 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
-            'stock_quantity' => 'required|integer',
+            'stock_mode' => 'required|in:satuan,dus',
             'stock_unit' => 'required|string|max:20',
+            'stock_quantity' => 'required_if:stock_mode,satuan|nullable|integer|min:0',
+            'unit_per_box' => 'required_if:stock_mode,dus|nullable|integer|min:1',
+            'box_stock' => 'required_if:stock_mode,dus|nullable|integer|min:0',
+            'restock_estimation' => 'nullable|string|max:100',
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
@@ -46,31 +50,43 @@ class ProductController extends Controller
             $imagePath = $request->file('image')->store('products', 'public');
         }
 
+        $stockQuantity = 0;
+
+        if ($request->stock_mode === 'dus') {
+            $stockQuantity = (int) $request->unit_per_box * (int) $request->box_stock;
+        } else {
+            $stockQuantity = (int) $request->stock_quantity;
+        }
+
         $product = Product::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name) . '-' . Str::random(5),
             'description' => $request->description,
             'price' => $request->price,
-            'stock_quantity' => $request->stock_quantity,
+            'stock_quantity' => $stockQuantity,
             'stock_unit' => $request->stock_unit,
+            'stock_mode' => $request->stock_mode,
+            'unit_per_box' => $request->stock_mode === 'dus' ? $request->unit_per_box : null,
+            'box_stock' => $request->stock_mode === 'dus' ? $request->box_stock : null,
+            'restock_estimation' => $request->restock_estimation,
             'category_id' => $request->category_id,
             'user_id' => auth()->id(),
             'image' => $imagePath,
             'status' => 'active',
         ]);
 
-            if ($request->has('variants')) {
-                foreach ($request->variants as $variant) {
-                    if (!empty($variant['variant_name']) && !empty($variant['price'])) {
-                        ProductVariant::create([
-                            'product_id' => $product->id,
-                            'variant_name' => $variant['variant_name'],
-                            'price' => $variant['price'],
-                            'stock' => 0,
-                        ]);
-                    }
+        if ($request->has('variants')) {
+            foreach ($request->variants as $variant) {
+                if (!empty($variant['variant_name']) && !empty($variant['price'])) {
+                    ProductVariant::create([
+                        'product_id' => $product->id,
+                        'variant_name' => $variant['variant_name'],
+                        'price' => $variant['price'],
+                        'stock' => 0,
+                    ]);
                 }
             }
+        }
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
     }
@@ -88,8 +104,12 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
-            'stock_quantity' => 'required|integer',
+            'stock_mode' => 'required|in:satuan,dus',
             'stock_unit' => 'required|string|max:20',
+            'stock_quantity' => 'required_if:stock_mode,satuan|nullable|integer|min:0',
+            'unit_per_box' => 'required_if:stock_mode,dus|nullable|integer|min:1',
+            'box_stock' => 'required_if:stock_mode,dus|nullable|integer|min:0',
+            'restock_estimation' => 'nullable|string|max:100',
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
@@ -104,13 +124,25 @@ class ProductController extends Controller
             $imagePath = $request->file('image')->store('products', 'public');
         }
 
+        $stockQuantity = 0;
+
+        if ($request->stock_mode === 'dus') {
+            $stockQuantity = (int) $request->unit_per_box * (int) $request->box_stock;
+        } else {
+            $stockQuantity = (int) $request->stock_quantity;
+        }
+
         $product->update([
             'name' => $request->name,
             'slug' => Str::slug($request->name) . '-' . $product->id,
             'description' => $request->description,
             'price' => $request->price,
-            'stock_quantity' => $request->stock_quantity,
+            'stock_quantity' => $stockQuantity,
             'stock_unit' => $request->stock_unit,
+            'stock_mode' => $request->stock_mode,
+            'unit_per_box' => $request->stock_mode === 'dus' ? $request->unit_per_box : null,
+            'box_stock' => $request->stock_mode === 'dus' ? $request->box_stock : null,
+            'restock_estimation' => $request->restock_estimation,
             'category_id' => $request->category_id,
             'image' => $imagePath,
         ]);
@@ -124,7 +156,7 @@ class ProductController extends Controller
                         'product_id' => $product->id,
                         'variant_name' => $variant['variant_name'],
                         'price' => $variant['price'],
-                        'stock' => $variant['stock'] ?? 0,
+                        'stock' => 0,
                     ]);
                 }
             }

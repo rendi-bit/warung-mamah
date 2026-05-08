@@ -7,17 +7,21 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     protected $fillable = [
-    'name',
-    'slug',
-    'description',
-    'price',
-    'stock_quantity',
-    'stock_unit',
-    'category_id',
-    'user_id',
-    'image',
-    'status',
-];
+        'name',
+        'slug',
+        'description',
+        'price',
+        'stock_quantity',
+        'stock_unit',
+        'stock_mode',
+        'unit_per_box',
+        'box_stock',
+        'restock_estimation',
+        'category_id',
+        'user_id',
+        'image',
+        'status',
+    ];
 
     public function category()
     {
@@ -48,6 +52,19 @@ class Product extends Model
 
     public function getStockLabelAttribute()
     {
+        return $this->stock_quantity . ' ' . $this->stock_unit;
+    }
+
+    public function getAdminStockLabelAttribute()
+    {
+        if ($this->stock_mode === 'dus') {
+            return ($this->box_stock ?? 0) . ' dus x ' .
+                ($this->unit_per_box ?? 0) . ' ' .
+                $this->stock_unit . ' = ' .
+                $this->stock_quantity . ' ' .
+                $this->stock_unit;
+        }
+
         return $this->stock_quantity . ' ' . $this->stock_unit;
     }
 }

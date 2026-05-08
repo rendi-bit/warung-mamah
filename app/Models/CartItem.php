@@ -11,6 +11,8 @@ class CartItem extends Model
         'product_id',
         'variant_id',
         'quantity',
+        'is_waiting_restock',
+        'waiting_restock_quantity',
     ];
 
     public function cart()

@@ -1295,3 +1295,242 @@
         font-size: 32px;
     }
 }
+
+/* =========================================================
+   CART RESTOCK NOTICE
+   ========================================================= */
+
+.cart-restock-pill {
+    display: inline-flex;
+    width: fit-content;
+    margin-top: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.cart-restock-note {
+    margin-top: 14px;
+    display: flex;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 18px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+
+.cart-restock-note i {
+    margin-top: 3px;
+}
+
+.cart-restock-note strong {
+    display: block;
+    color: #78350f;
+    margin-bottom: 4px;
+}
+
+.cart-restock-note p {
+    margin: 0;
+    color: #92400e;
+    line-height: 1.6;
+}
+
+.cart-restock-note small {
+    display: block;
+    margin-top: 5px;
+    font-weight: 800;
+}
+
+/* =========================================================
+   USER ORDER RESTOCK STATUS
+   ========================================================= */
+
+.order-product-title-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.order-restock-badge {
+    display: inline-flex;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.order-restock-note {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 16px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+
+.order-restock-note i {
+    margin-top: 3px;
+}
+
+.order-restock-note strong {
+    display: block;
+    color: #78350f;
+    margin-bottom: 4px;
+}
+
+.order-restock-note p {
+    margin: 0;
+    color: #92400e;
+    line-height: 1.6;
+    font-size: 13px;
+}
+
+.order-status-help {
+    margin-top: 8px;
+    max-width: 240px;
+    color: #92400e;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+
+.invoice-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 30px;
+    box-shadow: var(--shadow);
+}
+
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.invoice-badge {
+    display: inline-flex;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+    font-weight: 900;
+    margin-bottom: 12px;
+}
+
+.invoice-header h1 {
+    font-size: 38px;
+    margin-bottom: 8px;
+}
+
+.invoice-info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.invoice-info-box {
+    background: #fffaf3;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.invoice-info-box span {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.invoice-info-box strong {
+    color: var(--text);
+}
+
+.invoice-info-box p {
+    color: var(--muted);
+    margin: 4px 0 0;
+}
+
+.invoice-table-wrap {
+    overflow-x: auto;
+}
+
+.invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.invoice-table th,
+.invoice-table td {
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+.invoice-summary {
+    margin-left: auto;
+    margin-top: 24px;
+    max-width: 360px;
+    display: grid;
+    gap: 12px;
+}
+
+.invoice-summary div {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.invoice-grand {
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 20px;
+}
+
+.invoice-grand strong {
+    color: var(--primary-dark);
+}
+
+.invoice-cancel-note {
+    margin-bottom: 20px;
+    padding: 16px;
+    border-radius: 18px;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+.invoice-cancel-note p {
+    margin: 6px 0 0;
+    line-height: 1.6;
+}
+
+@media (max-width: 992px) {
+    .invoice-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .invoice-header {
+        flex-direction: column;
+    }
+
+    .invoice-info-grid {
+        grid-template-columns: 1fr;
+    }
+}

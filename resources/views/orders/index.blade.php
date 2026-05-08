@@ -50,9 +50,10 @@
                         <tr>
                             <th>Kode</th>
                             <th>Produk</th>
+                            <th>Metode Pembayaran</th>
                             <th>Status Pembayaran</th>
                             <th>Status Pengiriman</th>
-                            <th>Selesaikan Pesanan</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
 
@@ -62,24 +63,56 @@
                                 <td>
                                     <strong>{{ $order->order_code }}</strong>
 
-                                    <span class="order-date">
-                                        {{ $order->created_at ? $order->created_at->format('d M Y, H:i') : '-' }}
-                                    </span>
+                                    @if($order->has_waiting_restock)
+                                        <span class="admin-badge orange" style="margin-top:6px; display:inline-flex;">
+                                            Restok
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td>
                                     <div class="order-products-list">
                                         @foreach($order->items as $item)
                                             <div class="order-product-mini">
-                                                <strong>{{ $item->product->name ?? '-' }}</strong>
+                                                <div class="order-product-title-line">
+                                                    <strong>{{ $item->product->name ?? '-' }}</strong>
+
+                                                    @if($item->is_waiting_restock)
+                                                        <span class="order-restock-badge">
+                                                            Menunggu Restok
+                                                        </span>
+                                                    @endif
+                                                </div>
 
                                                 @if($item->variant)
                                                     <span>Varian: {{ $item->variant->variant_name }}</span>
                                                 @endif
 
-                                                <span>Jumlah: {{ $item->quantity }}</span>
+                                                <span>
+                                                    Jumlah:
+                                                    {{ $item->quantity }}
+                                                    {{ $item->product->stock_unit ?? 'item' }}
+                                                </span>
+
                                                 <span>Harga: Rp {{ number_format($item->price, 0, ',', '.') }}</span>
                                                 <span>Subtotal: Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
+
+                                                @if($item->is_waiting_restock)
+                                                    <div class="order-restock-note">
+                                                        <i class="fas fa-triangle-exclamation"></i>
+
+                                                        <div>
+                                                            <strong>Produk ini menunggu restok</strong>
+                                                            <p>
+                                                                Jumlah yang menunggu restok:
+                                                                {{ $item->waiting_restock_quantity }}
+                                                                {{ $item->product->stock_unit ?? 'item' }}.
+                                                                Estimasi tersedia:
+                                                                {{ $item->product->restock_estimation ?? '1 hari' }}.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                @endif
                                             </div>
                                         @endforeach
 
@@ -91,17 +124,33 @@
 
                                 <td>
                                     @php
-                                        $paymentClass = match($order->payment_status) {
-                                            'paid' => 'green',
-                                            'failed' => 'red',
-                                            default => 'yellow',
-                                        };
+                                        $methodClass = $order->payment_method === 'qris' ? 'blue' : 'orange';
+                                        $methodLabel = $order->payment_method === 'qris' ? 'QRIS' : 'COD';
+                                    @endphp
 
-                                        $paymentLabel = match($order->payment_status) {
-                                            'paid' => 'Paid',
-                                            'failed' => 'Failed',
-                                            default => 'Pending',
-                                        };
+                                    <span class="admin-badge {{ $methodClass }}">
+                                        {{ $methodLabel }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @php
+                                        if ($order->payment_method === 'cod') {
+                                            $paymentClass = 'orange';
+                                            $paymentLabel = 'Bayar di Tempat';
+                                        } else {
+                                            $paymentClass = match($order->payment_status) {
+                                                'paid' => 'green',
+                                                'failed' => 'red',
+                                                default => 'yellow',
+                                            };
+
+                                            $paymentLabel = match($order->payment_status) {
+                                                'paid' => 'Paid',
+                                                'failed' => 'Failed',
+                                                default => 'Pending',
+                                            };
+                                        }
                                     @endphp
 
                                     <span class="admin-badge {{ $paymentClass }}">
@@ -130,34 +179,67 @@
                                     <span class="admin-badge {{ $shippingClass }}">
                                         {{ $shippingLabel }}
                                     </span>
+
+                                    @if($order->has_waiting_restock)
+                                        <div class="order-status-help">
+                                            Ada produk yang sedang menunggu restok. Pesanan akan diproses setelah stok tersedia.
+                                        </div>
+                                    @endif
                                 </td>
 
                                 <td>
-                                    @if($order->order_status === 'completed')
-                                        <span class="admin-badge green">
-                                            Pesanan Selesai
-                                        </span>
+                                    <div class="order-action-stack">
+                                        <a href="{{ route('orders.invoice', $order->id) }}" class="btn btn-light btn-sm">
+                                            Invoice
+                                        </a>
 
-                                    @elseif($order->order_status === 'shipped')
-                                        <form action="{{ route('orders.complete', $order->id) }}" method="POST" onsubmit="return confirm('Yakin pesanan ini sudah kamu terima dan ingin diselesaikan?')">
-                                            @csrf
-                                            @method('PATCH')
+                                        @if($order->order_status === 'completed')
+                                            <span class="admin-badge green">
+                                                Pesanan Selesai
+                                            </span>
 
-                                            <button type="submit" class="btn btn-primary btn-sm">
-                                                Selesaikan Pesanan
-                                            </button>
-                                        </form>
+                                        @elseif($order->order_status === 'shipped')
+                                            <form action="{{ route('orders.complete', $order->id) }}" method="POST" onsubmit="return confirm('Yakin pesanan ini sudah kamu terima dan ingin diselesaikan?')">
+                                                @csrf
+                                                @method('PATCH')
 
-                                    @elseif($order->order_status === 'cancelled')
-                                        <span class="admin-badge red">
-                                            Pesanan Dibatalkan
-                                        </span>
+                                                <button type="submit" class="btn btn-primary btn-sm">
+                                                    Selesaikan Pesanan
+                                                </button>
+                                            </form>
 
-                                    @else
-                                        <span class="admin-badge yellow">
-                                            Menunggu Shipping
-                                        </span>
-                                    @endif
+                                        @elseif($order->order_status === 'cancelled')
+                                            <span class="admin-badge red">
+                                                Pesanan Dibatalkan
+                                            </span>
+
+                                            @if($order->payment_method === 'qris' && $order->payment_status === 'paid')
+                                                <small class="refund-help">
+                                                    Hubungi admin untuk proses refund QRIS.
+                                                </small>
+                                            @endif
+
+                                        @else
+                                            @if($order->created_at->gte(now()->subDay()))
+                                                <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan pesanan ini? Stok produk akan dikembalikan.')">
+                                                    @csrf
+                                                    @method('PATCH')
+
+                                                    <button type="submit" class="btn btn-light btn-sm">
+                                                        Batalkan Pesanan
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <span class="admin-badge yellow">
+                                                    Batas Cancel Habis
+                                                </span>
+                                            @endif
+
+                                            <span class="admin-badge yellow">
+                                                Menunggu Shipping
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

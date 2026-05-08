@@ -36,17 +36,25 @@
                         <input type="number" name="price" value="{{ old('price', $product->price) }}" required>
                     </div>
 
-                    <div class="stock-input-grid">
-                        <div>
-                            <label>Stok Utama</label>
-                            <input type="number" name="stock_quantity" value="{{ old('stock_quantity', $product->stock_quantity) }}" required>
-                        </div>
+                    <div class="settings-input-group full-width">
+                        <div class="stock-system-box">
+                            <h3>Pengaturan Stok</h3>
+                            <p class="text-muted">Atur stok berdasarkan satuan atau dus.</p>
 
-                        <div>
-                            <label>Satuan Stok</label>
-                            <select name="stock_unit" required>
+                            <label>Mode Stok</label>
+                            <select name="stock_mode" id="stock_mode" required>
+                                <option value="satuan" {{ old('stock_mode', $product->stock_mode ?? 'satuan') === 'satuan' ? 'selected' : '' }}>
+                                    Stok Per Satuan
+                                </option>
+                                <option value="dus" {{ old('stock_mode', $product->stock_mode ?? 'satuan') === 'dus' ? 'selected' : '' }}>
+                                    Stok Per Dus
+                                </option>
+                            </select>
+
+                            <label>Jenis Satuan</label>
+                            <select name="stock_unit" id="stock_unit" required>
                                 @php
-                                    $units = ['kg', 'gram', 'pcs', 'pack', 'dus', 'liter', 'botol', 'ikat', 'bungkus'];
+                                    $units = ['pcs', 'botol', 'bungkus', 'pack', 'kg', 'gram', 'liter', 'ikat'];
                                 @endphp
 
                                 @foreach($units as $unit)
@@ -55,6 +63,61 @@
                                     </option>
                                 @endforeach
                             </select>
+
+                            <div id="stock_satuan_box">
+                                <label>Total Stok Satuan</label>
+                                <input
+                                    type="number"
+                                    name="stock_quantity"
+                                    id="stock_quantity"
+                                    min="0"
+                                    value="{{ old('stock_quantity', $product->stock_quantity) }}"
+                                >
+
+                                <div class="stock-preview-box">
+                                    Total stok:
+                                    <strong id="satuan_preview">0 pcs</strong>
+                                </div>
+                            </div>
+
+                            <div id="stock_dus_box" style="display:none;">
+                                <div class="stock-input-grid">
+                                    <div>
+                                        <label>Isi Per Dus</label>
+                                        <input
+                                            type="number"
+                                            name="unit_per_box"
+                                            id="unit_per_box"
+                                            min="1"
+                                            value="{{ old('unit_per_box', $product->unit_per_box) }}"
+                                        >
+                                    </div>
+
+                                    <div>
+                                        <label>Stok Dus</label>
+                                        <input
+                                            type="number"
+                                            name="box_stock"
+                                            id="box_stock"
+                                            min="0"
+                                            value="{{ old('box_stock', $product->box_stock) }}"
+                                        >
+                                    </div>
+                                </div>
+
+                                <div class="stock-preview-box">
+                                    Total stok otomatis:
+                                    <strong id="dus_preview">0 pcs</strong>
+                                </div>
+                            </div>
+
+                            <label>Estimasi Restok</label>
+                            <input
+                                type="text"
+                                name="restock_estimation"
+                                value="{{ old('restock_estimation', $product->restock_estimation) }}"
+                                placeholder="Contoh: 1 hari"
+                            >
                         </div>
                     </div>
 
@@ -106,18 +169,62 @@ document.addEventListener('DOMContentLoaded', function () {
     const wrapper = document.getElementById('variant-wrapper');
     const addBtn = document.getElementById('add-variant-btn');
 
-    addBtn.addEventListener('click', function () {
-        const row = document.createElement('div');
-        row.classList.add('variant-row');
+    if (addBtn && wrapper) {
+        addBtn.addEventListener('click', function () {
+            const row = document.createElement('div');
+            row.classList.add('variant-row');
 
-        row.innerHTML = `
-            <input type="text" name="variants[${variantIndex}][variant_name]" placeholder="Contoh: 1/2 kg">
-            <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga">
-        `;
+            row.innerHTML = `
+                <input type="text" name="variants[${variantIndex}][variant_name]" placeholder="Contoh: 1/2 kg">
+                <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga">
+            `;
 
-        wrapper.appendChild(row);
-        variantIndex++;
+            wrapper.appendChild(row);
+            variantIndex++;
+        });
+    }
+
+    const stockMode = document.getElementById('stock_mode');
+    const stockUnit = document.getElementById('stock_unit');
+    const satuanBox = document.getElementById('stock_satuan_box');
+    const dusBox = document.getElementById('stock_dus_box');
+
+    const stockQuantity = document.getElementById('stock_quantity');
+    const unitPerBox = document.getElementById('unit_per_box');
+    const boxStock = document.getElementById('box_stock');
+
+    const satuanPreview = document.getElementById('satuan_preview');
+    const dusPreview = document.getElementById('dus_preview');
+
+    function updateStockView() {
+        const unit = stockUnit.value || 'pcs';
+
+        if (stockMode.value === 'dus') {
+            satuanBox.style.display = 'none';
+            dusBox.style.display = 'block';
+
+            const isiDus = parseInt(unitPerBox.value) || 0;
+            const jumlahDus = parseInt(boxStock.value) || 0;
+            const total = isiDus * jumlahDus;
+
+            dusPreview.textContent = total + ' ' + unit;
+        } else {
+            satuanBox.style.display = 'block';
+            dusBox.style.display = 'none';
+
+            const total = parseInt(stockQuantity.value) || 0;
+            satuanPreview.textContent = total + ' ' + unit;
+        }
+    }
+
+    [stockMode, stockUnit, stockQuantity, unitPerBox, boxStock].forEach(function (element) {
+        if (element) {
+            element.addEventListener('input', updateStockView);
+            element.addEventListener('change', updateStockView);
+        }
     });
+
+    updateStockView();
 });
 </script>
 @endsection

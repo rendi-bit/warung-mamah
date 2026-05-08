@@ -67,6 +67,8 @@
                     >
                         @csrf
 
+                        <input type="hidden" name="allow_waiting_restock" id="allow_waiting_restock" value="0">
+
                         @if($product->variants->count())
                             <div class="qty-box">
                                 <label for="variant_id">Pilih Berat</label>
@@ -99,7 +101,6 @@
                                     class="qty-input"
                                     value="1"
                                     min="1"
-                                    max="{{ $product->stock_quantity }}"
                                     readonly
                                     required
                                 >
@@ -310,6 +311,38 @@
     </div>
 </section>
 
+<div class="stock-warning-modal" id="stockWarningModal">
+    <div class="stock-warning-card">
+        <button type="button" class="stock-warning-close" id="stockWarningClose">×</button>
+
+        <div class="stock-warning-icon">
+            <i class="fas fa-triangle-exclamation"></i>
+        </div>
+
+        <h3>Stok Belum Mencukupi</h3>
+
+        <p>
+            Maaf, stok <strong>{{ $product->name }}</strong> saat ini hanya
+            <strong>{{ $product->stock_quantity }} {{ $product->stock_unit }}</strong>.
+        </p>
+
+        <p>
+            Produk sedang dalam proses restok dan diperkirakan tersedia dalam
+            <strong>{{ $product->restock_estimation ?? '1 hari' }}</strong>.
+        </p>
+
+        <div class="stock-warning-actions">
+            <button type="button" class="btn btn-light" id="reduceToStockBtn">
+                Kurangi ke {{ $product->stock_quantity }} {{ $product->stock_unit }}
+            </button>
+
+            <button type="button" class="btn btn-primary" id="waitRestockBtn">
+                Tetap Pesan & Tunggu Restok
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const variantSelect = document.getElementById('variant_id');
@@ -343,10 +376,58 @@ document.addEventListener('DOMContentLoaded', function () {
 
         plusBtn.addEventListener('click', function () {
             let currentValue = parseInt(qtyInput.value) || 1;
-            let maxValue = parseInt(qtyInput.getAttribute('max')) || 999999;
+            qtyInput.value = currentValue + 1;
+        });
+    }
 
-            if (currentValue < maxValue) {
-                qtyInput.value = currentValue + 1;
+    const detailCartForm = document.getElementById('detailCartForm');
+    const stockWarningModal = document.getElementById('stockWarningModal');
+    const stockWarningClose = document.getElementById('stockWarningClose');
+    const reduceToStockBtn = document.getElementById('reduceToStockBtn');
+    const waitRestockBtn = document.getElementById('waitRestockBtn');
+    const allowWaitingRestock = document.getElementById('allow_waiting_restock');
+
+    const availableStock = {{ (int) $product->stock_quantity }};
+
+    let pendingSubmitter = null;
+
+    if (detailCartForm && qtyInput && stockWarningModal) {
+        detailCartForm.addEventListener('submit', function (event) {
+            const requestedQty = parseInt(qtyInput.value) || 1;
+            const allowRestock = allowWaitingRestock ? allowWaitingRestock.value : '0';
+
+            if (requestedQty > availableStock && allowRestock !== '1') {
+                event.preventDefault();
+
+                pendingSubmitter = event.submitter;
+
+                stockWarningModal.classList.add('active');
+            }
+        });
+    }
+
+    if (stockWarningClose && stockWarningModal) {
+        stockWarningClose.addEventListener('click', function () {
+            stockWarningModal.classList.remove('active'); 
+        });
+    }
+
+    if (reduceToStockBtn && qtyInput && stockWarningModal) {
+        reduceToStockBtn.addEventListener('click', function () {
+            qtyInput.value = availableStock > 0 ? availableStock : 1;
+            stockWarningModal.classList.remove('active');
+        });
+    }
+
+    if (waitRestockBtn && detailCartForm && allowWaitingRestock) {
+        waitRestockBtn.addEventListener('click', function () {
+            allowWaitingRestock.value = '1';
+            stockWarningModal.classList.remove('active');
+
+            if (pendingSubmitter) {
+                pendingSubmitter.click();
+            } else {
+                detailCartForm.submit();
             }
         });
     }

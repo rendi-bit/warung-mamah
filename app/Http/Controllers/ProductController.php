@@ -22,9 +22,9 @@ class ProductController extends Controller
             $keyword = $request->search;
 
             $query->where(function ($q) use ($keyword) {
-                $q->where('name', 'ILIKE', '%' . $keyword . '%')
+                $q->where('name', 'LIKE', '%' . $keyword . '%')
                     ->orWhereHas('category', function ($categoryQuery) use ($keyword) {
-                        $categoryQuery->where('category_name', 'ILIKE', '%' . $keyword . '%');
+                        $categoryQuery->where('category_name', 'LIKE', '%' . $keyword . '%');
                     });
             });
         }
@@ -86,9 +86,9 @@ class ProductController extends Controller
         $products = Product::with('category')
             ->where('status', 'active')
             ->where(function ($query) use ($keyword) {
-                $query->where('name', 'ILIKE', '%' . $keyword . '%')
+                $query->where('name', 'LIKE', '%' . $keyword . '%')
                     ->orWhereHas('category', function ($categoryQuery) use ($keyword) {
-                        $categoryQuery->where('category_name', 'ILIKE', '%' . $keyword . '%');
+                        $categoryQuery->where('category_name', 'LIKE', '%' . $keyword . '%');
                     });
             })
             ->latest()

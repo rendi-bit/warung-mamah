@@ -23,6 +23,7 @@
                             <th>Kode</th>
                             <th>Pelanggan</th>
                             <th>Total</th>
+                            <th>Metode</th>
                             <th>Pembayaran</th>
                             <th>Status Order</th>
                             <th>Tanggal</th>
@@ -52,8 +53,38 @@
                                 </td>
 
                                 <td>
-                                    <span class="admin-badge {{ $order->payment_status === 'paid' ? 'green' : 'yellow' }}">
-                                        {{ ucfirst($order->payment_status) }}
+                                    @php
+                                        $methodClass = $order->payment_method === 'qris' ? 'blue' : 'orange';
+                                        $methodLabel = $order->payment_method === 'qris' ? 'QRIS' : 'COD';
+                                    @endphp
+
+                                    <span class="admin-badge {{ $methodClass }}">
+                                        {{ $methodLabel }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @php
+                                        if ($order->payment_method === 'cod') {
+                                            $paymentClass = 'orange';
+                                            $paymentLabel = 'Bayar di Tempat';
+                                        } else {
+                                            $paymentClass = match($order->payment_status) {
+                                                'paid' => 'green',
+                                                'failed' => 'red',
+                                                default => 'yellow',
+                                            };
+
+                                            $paymentLabel = match($order->payment_status) {
+                                                'paid' => 'Paid',
+                                                'failed' => 'Failed',
+                                                default => 'Pending',
+                                            };
+                                        }
+                                    @endphp
+
+                                    <span class="admin-badge {{ $paymentClass }}">
+                                        {{ $paymentLabel }}
                                     </span>
                                 </td>
 

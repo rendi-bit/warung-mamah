@@ -57,6 +57,11 @@
                                                 Tanpa varian
                                             </span>
                                         @endif
+                                        @if($item->is_waiting_restock)
+                                            <span class="cart-restock-pill">
+                                                Menunggu Restok
+                                            </span>
+                                        @endif
                                     </div>
 
                                     <form action="{{ route('cart.remove', $item->id) }}" method="POST" onsubmit="return confirm('Hapus item ini dari keranjang?')">
@@ -68,6 +73,27 @@
                                         </button>
                                     </form>
                                 </div>
+
+                                @if($item->is_waiting_restock)
+                                    <div class="cart-restock-note">
+                                        <i class="fas fa-triangle-exclamation"></i>
+                                        <div>
+                                            <strong>Pesanan melebihi stok tersedia</strong>
+                                            <p>
+                                                Stok tersedia saat ini:
+                                                {{ $item->product->stock_quantity }} {{ $item->product->stock_unit }}.
+                                                Jumlah dipesan:
+                                                {{ $item->quantity }} {{ $item->product->stock_unit }}.
+                                                Menunggu restok:
+                                                {{ $item->waiting_restock_quantity }} {{ $item->product->stock_unit }}.
+                                            </p>
+                                            <small>
+                                                Estimasi restok:
+                                                {{ $item->product->restock_estimation ?? '1 hari' }}.
+                                            </small>
+                                        </div>
+                                    </div>
+                                @endif
 
                                 <div class="cart-product-meta">
                                     <div>
@@ -84,6 +110,7 @@
                                 <div class="cart-product-footer">
                                     <form action="{{ route('cart.update', $item->id) }}" method="POST" class="cart-qty-modern-form">
                                         @csrf
+                                        <input type="hidden" name="allow_waiting_restock" value="{{ $item->is_waiting_restock ? 1 : 0 }}">
 
                                         <div class="cart-quantity-control">
                                             <button type="button" class="cart-qty-btn cart-minus">−</button>

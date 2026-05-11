@@ -129,6 +129,11 @@ class CartController extends Controller
         ]);
 
         $item = CartItem::with('product')->findOrFail($id);
+
+        $cart = Cart::where('user_id', auth()->id())->firstOrFail();
+        if ($item->cart_id !== $cart->id) {
+            abort(403);
+        }
         $product = $item->product;
         $qty = (int) $request->quantity;
         $allowWaitingRestock = $request->boolean('allow_waiting_restock');
@@ -151,6 +156,12 @@ class CartController extends Controller
     public function remove($id)
     {
         $item = CartItem::findOrFail($id);
+
+        $cart = Cart::where('user_id', auth()->id())->firstOrFail();
+        if ($item->cart_id !== $cart->id) {
+            abort(403);
+        }
+
         $item->delete();
 
         return back()->with('success', 'Produk berhasil dihapus dari keranjang.');

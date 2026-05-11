@@ -70,8 +70,25 @@ class OrderController extends Controller
             ->with('success', 'Status pesanan berhasil diperbarui.');
     }
 
-    public function fulfillRestock(Order $order)
+    public function confirmPayment(Order $order)
     {
+        if ($order->payment_status === 'paid') {
+            return redirect()
+                ->route('admin.orders.show', $order->id)
+                ->with('success', 'Pembayaran sudah dikonfirmasi sebelumnya.');
+        }
+
+        $order->update([
+            'payment_status'       => 'paid',
+            'payment_confirmed_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('admin.orders.show', $order->id)
+            ->with('success', 'Pembayaran berhasil dikonfirmasi.');
+    }
+
+    public function fulfillRestock(Order $order)    {
         if (!$order->has_waiting_restock) {
             return redirect()
                 ->route('admin.orders.show', $order->id)
@@ -97,17 +114,4 @@ class OrderController extends Controller
             ->with('success', 'Restok pesanan sudah ditandai terpenuhi. Pesanan sekarang bisa diproses ke Shipping.');
     }
 
-
-    public function confirmPayment(Order $order)
-    {
-        $order->update([
-            'payment_status' => 'paid',
-            'payment_confirmed_at' => now(),
-        ]);
-
-        return back()->with(
-            'success',
-            'Pembayaran berhasil dikonfirmasi.'
-        );
-    }
 }

@@ -57,7 +57,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/products/{product}/reviews', [\App\Http\Controllers\ProductReviewController::class, 'store'])
     ->name('products.reviews.store');
 
-    
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
+    Route::get('/checkout/payment/{order}', [CheckoutController::class, 'payment'])->name('checkout.payment');
+
+    Route::get('/wishlist', [\App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist/add/{product}', [\App\Http\Controllers\WishlistController::class, 'add'])->name('wishlist.add');
+    Route::delete('/wishlist/remove/{id}', [\App\Http\Controllers\WishlistController::class, 'remove'])->name('wishlist.remove');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -66,27 +72,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('/categories', AdminCategoryController::class);
     Route::resource('/products', AdminProductController::class);
 
-Route::patch('/orders/{order}/fulfill-restock', [AdminOrderController::class, 'fulfillRestock'])
-    ->name('orders.fulfillRestock');    
+    Route::patch('/orders/{order}/fulfill-restock', [AdminOrderController::class, 'fulfillRestock'])
+        ->name('orders.fulfillRestock');
+
+    Route::patch('/orders/{order}/confirm-payment', [\App\Http\Controllers\Admin\OrderController::class, 'confirmPayment'])
+        ->name('orders.confirm-payment');
 
     Route::resource('/orders', AdminOrderController::class)->only(['index', 'show', 'update']);
 });
 
 Route::post('/chatbot/ask', [ChatbotController::class, 'ask'])->name('chatbot.ask');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
-    Route::get('/checkout/payment/{order}', [CheckoutController::class, 'payment'])->name('checkout.payment');
-});
-
-
-Route::middleware('auth')->group(function () {
-    Route::get('/wishlist', [\App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');
-    Route::post('/wishlist/add/{product}', [\App\Http\Controllers\WishlistController::class, 'add'])->name('wishlist.add');
-    Route::delete('/wishlist/remove/{id}', [\App\Http\Controllers\WishlistController::class, 'remove'])->name('wishlist.remove');
-    
-                                                                                                                              
-});
 
 require __DIR__.'/auth.php';

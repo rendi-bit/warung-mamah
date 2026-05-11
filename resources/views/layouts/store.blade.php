@@ -601,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const url = link.getAttribute('href');
             const isInternal = !!url && (url.startsWith('/') || url.startsWith(window.location.origin));
             const isAnchor = url && url.startsWith('#');
-            if (!isInternal || isAnchor || link.target === '_blank' || event.ctrlKey || event.metaKey) return;
+            if (!isInternal || isAnchor || link.target === '_blank' || event.ctrlKey || event.metaKey || link.closest('form')) return;
             if (!pageTransitionRoot) return;
             event.preventDefault();
             pageTransitionRoot.classList.remove('is-visible');

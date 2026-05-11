@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
@@ -125,8 +126,65 @@ class OrderController extends Controller
         return view('orders.invoice', compact('order'));
     }
 
-    public function uploadProof(Request $request, $orderId)
-{
-    dd('uploadProof dipanggil', $request->all(), $request->hasFile('payment_proof'));
-}
+    /**
+     * Upload bukti pembayaran.
+     */
+    public function uploadProof(Request $request, Order $order)
+    {
+        // Pastikan order milik user yang login
+        if ($order->user_id !== auth()->id()) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // Validasi file
+        $request->validate([
+            'payment_proof' => [
+                'required',
+                'file',
+                'image',
+                'mimes:jpg,jpeg,png',
+                'max:2048',
+            ],
+        ], [
+            'payment_proof.required'  => 'Bukti pembayaran wajib diupload.',
+            'payment_proof.file'      => 'Upload harus berupa file.',
+            'payment_proof.image'     => 'File harus berupa gambar.',
+            'payment_proof.mimes'     => 'Format gambar harus JPG, JPEG, atau PNG.',
+            'payment_proof.max'       => 'Ukuran gambar maksimal 2MB.',
+        ]);
+
+        // Hapus file lama jika ada
+        if ($order->payment_proof && Storage::disk('public')->exists($order->payment_proof)) {
+            Storage::disk('public')->delete($order->payment_proof);
+        }
+
+        // Pastikan folder tujuan ada
+        Storage::disk('public')->makeDirectory('payment_proofs');
+
+        // Generate nama file unik
+        $extension = $request->file('payment_proof')->getClientOriginalExtension();
+        $filename = 'proof_' . $order->order_code . '_' . Str::random(8) . '_' . time() . '.' . $extension;
+
+        // Simpan file ke storage/app/public/payment_proofs/
+        $path = $request->file('payment_proof')->storeAs(
+            'payment_proofs',
+            $filename,
+            'public'
+        );
+
+        if (!$path) {
+            return back()
+                ->with('error', 'Gagal menyimpan file. Silakan coba lagi.')
+                ->withInput();
+        }
+
+        // Simpan path ke database
+        $order->update([
+            'payment_proof' => $path,
+        ]);
+
+        return redirect()
+            ->route('checkout.payment', $order->id)
+            ->with('success', 'Bukti pembayaran berhasil diupload! Admin akan segera memverifikasi.');
+    }
 }

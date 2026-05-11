@@ -15,6 +15,10 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
+        @if(session('error'))
+            <div class="alert alert-error">{{ session('error') }}</div>
+        @endif
+
         @if($orders->count())
             <div class="admin-table-wrap">
                 <table class="admin-table">
@@ -36,6 +40,12 @@
                             <tr>
                                 <td>
                                     <strong>{{ $order->order_code }}</strong>
+                                    @if($order->has_waiting_restock)
+                                        <br>
+                                        <span class="admin-badge orange" style="margin-top:4px; display:inline-flex; font-size:10px;">
+                                            Restok
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td>
@@ -57,7 +67,6 @@
                                         $methodClass = $order->payment_method === 'qris' ? 'blue' : 'orange';
                                         $methodLabel = $order->payment_method === 'qris' ? 'QRIS' : 'COD';
                                     @endphp
-
                                     <span class="admin-badge {{ $methodClass }}">
                                         {{ $methodLabel }}
                                     </span>
@@ -70,27 +79,40 @@
                                             $paymentLabel = 'Bayar di Tempat';
                                         } else {
                                             $paymentClass = match($order->payment_status) {
-                                                'paid' => 'green',
+                                                'paid'   => 'green',
                                                 'failed' => 'red',
-                                                default => 'yellow',
+                                                default  => 'yellow',
                                             };
-
                                             $paymentLabel = match($order->payment_status) {
-                                                'paid' => 'Paid',
+                                                'paid'   => 'Paid',
                                                 'failed' => 'Failed',
-                                                default => 'Pending',
+                                                default  => 'Pending',
                                             };
                                         }
                                     @endphp
-
                                     <span class="admin-badge {{ $paymentClass }}">
                                         {{ $paymentLabel }}
                                     </span>
                                 </td>
 
                                 <td>
-                                    <span class="admin-badge blue">
-                                        {{ ucfirst($order->order_status) }}
+                                    @php
+                                        $statusClass = match($order->order_status) {
+                                            'completed' => 'green',
+                                            'shipped'   => 'blue',
+                                            'cancelled' => 'red',
+                                            default     => 'yellow',
+                                        };
+                                        $statusLabel = match($order->order_status) {
+                                            'pending'   => 'Pending',
+                                            'shipped'   => 'Dikirim',
+                                            'completed' => 'Selesai',
+                                            'cancelled' => 'Dibatalkan',
+                                            default     => ucfirst($order->order_status),
+                                        };
+                                    @endphp
+                                    <span class="admin-badge {{ $statusClass }}">
+                                        {{ $statusLabel }}
                                     </span>
                                 </td>
 
@@ -108,6 +130,14 @@
                     </tbody>
                 </table>
             </div>
+
+            {{-- ✅ FIX: Pagination untuk admin --}}
+            @if($orders->hasPages())
+                <div style="margin-top: 32px; display: flex; justify-content: center;">
+                    {{ $orders->links() }}
+                </div>
+            @endif
+
         @else
             <div class="admin-empty">
                 <div class="admin-empty-icon">🧾</div>

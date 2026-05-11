@@ -140,15 +140,15 @@
                                             $paymentLabel = 'Bayar di Tempat';
                                         } else {
                                             $paymentClass = match($order->payment_status) {
-                                                'paid' => 'green',
+                                                'paid'   => 'green',
                                                 'failed' => 'red',
-                                                default => 'yellow',
+                                                default  => 'yellow',
                                             };
 
                                             $paymentLabel = match($order->payment_status) {
-                                                'paid' => 'Paid',
+                                                'paid'   => 'Paid',
                                                 'failed' => 'Failed',
-                                                default => 'Pending',
+                                                default  => 'Pending',
                                             };
                                         }
                                     @endphp
@@ -161,18 +161,18 @@
                                 <td>
                                     @php
                                         $shippingLabel = match($order->order_status) {
-                                            'pending' => 'Pending',
-                                            'shipped' => 'Shipping',
+                                            'pending'   => 'Pending',
+                                            'shipped'   => 'Shipping',
                                             'completed' => 'Selesai',
                                             'cancelled' => 'Dibatalkan',
-                                            default => ucfirst($order->order_status),
+                                            default     => ucfirst($order->order_status),
                                         };
 
                                         $shippingClass = match($order->order_status) {
                                             'completed' => 'green',
-                                            'shipped' => 'blue',
+                                            'shipped'   => 'blue',
                                             'cancelled' => 'red',
-                                            default => 'yellow',
+                                            default     => 'yellow',
                                         };
                                     @endphp
 
@@ -182,7 +182,7 @@
 
                                     @if($order->has_waiting_restock)
                                         <div class="order-status-help">
-                                            Ada produk yang sedang menunggu restok. Pesanan akan diproses setelah stok tersedia.
+                                            Ada produk yang sedang menunggu restok.
                                         </div>
                                     @endif
                                 </td>
@@ -199,10 +199,9 @@
                                             </span>
 
                                         @elseif($order->order_status === 'shipped')
-                                            <form action="{{ route('orders.complete', $order->id) }}" method="POST" onsubmit="return confirm('Yakin pesanan ini sudah kamu terima dan ingin diselesaikan?')">
+                                            <form action="{{ route('orders.complete', $order->id) }}" method="POST" onsubmit="return confirm('Yakin pesanan ini sudah kamu terima?')">
                                                 @csrf
                                                 @method('PATCH')
-
                                                 <button type="submit" class="btn btn-primary btn-sm">
                                                     Selesaikan Pesanan
                                                 </button>
@@ -221,10 +220,9 @@
 
                                         @else
                                             @if($order->created_at->gte(now()->subDay()))
-                                                <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan pesanan ini? Stok produk akan dikembalikan.')">
+                                                <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan pesanan ini?')">
                                                     @csrf
                                                     @method('PATCH')
-
                                                     <button type="submit" class="btn btn-light btn-sm">
                                                         Batalkan Pesanan
                                                     </button>
@@ -246,6 +244,14 @@
                     </tbody>
                 </table>
             </div>
+
+            {{-- ✅ FIX: Tambah pagination links --}}
+            @if($orders->hasPages())
+                <div style="margin-top: 32px; display: flex; justify-content: center;">
+                    {{ $orders->links() }}
+                </div>
+            @endif
+
         @else
             <div class="admin-empty">
                 <div class="admin-empty-icon">🧾</div>

@@ -10,7 +10,8 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $orders = Order::with('user')->latest()->get();
+        // ✅ FIX: Pakai paginate(15) agar tidak loading semua data sekaligus
+        $orders = Order::with('user')->latest()->paginate(15);
 
         return view('admin.orders.index', compact('orders'));
     }
@@ -26,14 +27,14 @@ class OrderController extends Controller
     {
         $request->validate([
             'payment_status' => 'required|in:pending,paid,failed',
-            'order_status' => 'required|in:pending,shipped,completed',
+            'order_status'   => 'required|in:pending,shipped,completed',
         ]);
 
         if ($order->order_status === 'completed') {
             $order->update([
                 'payment_status' => $request->payment_status,
-                'order_status' => 'completed',
-                'completed_at' => $order->completed_at ?? now(),
+                'order_status'   => 'completed',
+                'completed_at'   => $order->completed_at ?? now(),
             ]);
 
             return redirect()
@@ -51,7 +52,7 @@ class OrderController extends Controller
 
         $data = [
             'payment_status' => $request->payment_status,
-            'order_status' => $newStatus,
+            'order_status'   => $newStatus,
         ];
 
         if ($newStatus === 'shipped' && !$order->shipped_at) {
@@ -59,7 +60,7 @@ class OrderController extends Controller
         }
 
         if ($newStatus === 'pending') {
-            $data['shipped_at'] = null;
+            $data['shipped_at']   = null;
             $data['completed_at'] = null;
         }
 
@@ -88,7 +89,8 @@ class OrderController extends Controller
             ->with('success', 'Pembayaran berhasil dikonfirmasi.');
     }
 
-    public function fulfillRestock(Order $order)    {
+    public function fulfillRestock(Order $order)
+    {
         if (!$order->has_waiting_restock) {
             return redirect()
                 ->route('admin.orders.show', $order->id)
@@ -98,7 +100,7 @@ class OrderController extends Controller
         foreach ($order->items as $item) {
             if ($item->is_waiting_restock) {
                 $item->update([
-                    'is_waiting_restock' => false,
+                    'is_waiting_restock'       => false,
                     'waiting_restock_quantity' => 0,
                 ]);
             }
@@ -106,12 +108,11 @@ class OrderController extends Controller
 
         $order->update([
             'has_waiting_restock' => false,
-            'restock_note' => null,
+            'restock_note'        => null,
         ]);
 
         return redirect()
             ->route('admin.orders.show', $order->id)
             ->with('success', 'Restok pesanan sudah ditandai terpenuhi. Pesanan sekarang bisa diproses ke Shipping.');
     }
-
 }

@@ -58,6 +58,39 @@
                             </ol>
                         </div>
 
+                        <form
+                            action="{{ route('orders.upload-proof', $order->id) }}"
+                            method="POST"
+                            enctype="multipart/form-data"
+                            class="upload-proof-form"
+                        >
+                            @csrf
+                            @method('PATCH')
+
+                            <div class="upload-proof-group">
+
+                                <label class="upload-proof-label">
+                                    Upload Bukti Pembayaran
+                                </label>
+
+                                <input
+                                    type="file"
+                                    name="payment_proof"
+                                    accept="image/*"
+                                    required
+                                    class="upload-proof-input"
+                                >
+
+                            </div>
+
+                            <button
+                                type="submit"
+                                class="btn btn-success payment-upload-btn"
+                            >
+                                Upload Bukti Bayar
+                            </button>
+                        </form>
+
                         <div class="payment-action-box">
                             <a href="{{ route('orders.index') }}" class="btn btn-primary payment-main-btn">
                                 Saya Sudah Bayar

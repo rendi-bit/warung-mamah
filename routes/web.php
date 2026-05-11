@@ -38,12 +38,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/cart/remove/{item}', [CartController::class, 'remove'])->name('cart.remove');
     Route::post('/cart/buy-now/{product}', [CartController::class, 'buyNow'])->name('cart.buyNow');
 
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
-
     Route::get('/my-orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
     Route::get('/my-orders/{id}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
     Route::get('/my-orders/{order}/invoice', [\App\Http\Controllers\OrderController::class, 'invoice'])->name('orders.invoice');
+    Route::patch('/my-orders/{order}/upload-proof',[\App\Http\Controllers\OrderController::class, 'uploadProof'])->name('orders.upload-proof');
 
     Route::patch('/my-orders/{order}/complete', [\App\Http\Controllers\OrderController::class, 'complete'])->name('orders.complete');
     Route::patch('/my-orders/{order}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
@@ -69,7 +67,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('/products', AdminProductController::class);
 
 Route::patch('/orders/{order}/fulfill-restock', [AdminOrderController::class, 'fulfillRestock'])
-    ->name('orders.fulfillRestock');
+    ->name('orders.fulfillRestock');    
 
     Route::resource('/orders', AdminOrderController::class)->only(['index', 'show', 'update']);
 });

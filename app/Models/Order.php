@@ -23,11 +23,16 @@ class Order extends Model
         'notes',
         'has_waiting_restock',
         'restock_note',
+        
+        'payment_proof',
+        'payment_confirmed_at',
     ];
     
     protected $casts = [
         'shipped_at' => 'datetime',
         'completed_at' => 'datetime',
+        'has_waiting_restock' => 'boolean',
+        'payment_confirmed_at' => 'datetime',
         'has_waiting_restock' => 'boolean',
     ];
 

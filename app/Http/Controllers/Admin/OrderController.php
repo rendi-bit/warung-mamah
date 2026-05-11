@@ -96,4 +96,18 @@ class OrderController extends Controller
             ->route('admin.orders.show', $order->id)
             ->with('success', 'Restok pesanan sudah ditandai terpenuhi. Pesanan sekarang bisa diproses ke Shipping.');
     }
+
+
+    public function confirmPayment(Order $order)
+    {
+        $order->update([
+            'payment_status' => 'paid',
+            'payment_confirmed_at' => now(),
+        ]);
+
+        return back()->with(
+            'success',
+            'Pembayaran berhasil dikonfirmasi.'
+        );
+    }
 }

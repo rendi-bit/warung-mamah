@@ -26,9 +26,13 @@ Route::view('/syarat-ketentuan', 'pages.terms')->name('pages.terms');
 Route::view('/cara-belanja', 'pages.how-to-shop')->name('pages.how-to-shop');
 Route::view('/kontak-kami', 'pages.contact')->name('pages.contact');
 
-
-
 Route::middleware('auth')->group(function () {
+
+    // ✅ FIX #1: Route settings dipindah ke dalam middleware auth
+    Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
+    Route::put('/settings/profile', [\App\Http\Controllers\SettingController::class, 'updateProfile'])->name('settings.profile.update');
+    Route::put('/settings/password', [\App\Http\Controllers\SettingController::class, 'updatePassword'])->name('settings.password.update');
+
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/add/{product}', [CartController::class, 'add'])->name('cart.add');
     Route::post('/cart/update/{item}', [CartController::class, 'update'])->name('cart.update');
@@ -38,8 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
     Route::get('/my-orders/{id}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
     Route::get('/my-orders/{order}/invoice', [\App\Http\Controllers\OrderController::class, 'invoice'])->name('orders.invoice');
-    Route::patch('/my-orders/{order}/upload-proof',[\App\Http\Controllers\OrderController::class, 'uploadProof'])->name('orders.upload-proof');
-
+    Route::patch('/my-orders/{order}/upload-proof', [\App\Http\Controllers\OrderController::class, 'uploadProof'])->name('orders.upload-proof');
     Route::patch('/my-orders/{order}/complete', [\App\Http\Controllers\OrderController::class, 'complete'])->name('orders.complete');
     Route::patch('/my-orders/{order}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
 
@@ -47,16 +50,12 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('home');
     })->name('dashboard');
 
-    Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
-    Route::put('/settings/profile', [\App\Http\Controllers\SettingController::class, 'updateProfile'])->name('settings.profile.update');
-    Route::put('/settings/password', [\App\Http\Controllers\SettingController::class, 'updatePassword'])->name('settings.password.update');
-
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::post('/products/{product}/reviews', [\App\Http\Controllers\ProductReviewController::class, 'store'])
-    ->name('products.reviews.store');
+        ->name('products.reviews.store');
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
@@ -65,6 +64,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/wishlist', [\App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('/wishlist/add/{product}', [\App\Http\Controllers\WishlistController::class, 'add'])->name('wishlist.add');
     Route::delete('/wishlist/remove/{id}', [\App\Http\Controllers\WishlistController::class, 'remove'])->name('wishlist.remove');
+
+    // ✅ FIX #6: Chatbot dipindah ke dalam middleware auth + rate limit 15 request/menit
+    Route::post('/chatbot/ask', [ChatbotController::class, 'ask'])
+        ->name('chatbot.ask')
+        ->middleware('throttle:15,1');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -81,7 +85,5 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::resource('/orders', AdminOrderController::class)->only(['index', 'show', 'update']);
 });
-
-Route::post('/chatbot/ask', [ChatbotController::class, 'ask'])->name('chatbot.ask');
 
 require __DIR__.'/auth.php';

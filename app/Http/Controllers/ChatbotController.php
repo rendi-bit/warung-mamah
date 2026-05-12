@@ -210,23 +210,7 @@ PROMPT;
 
     private function extractTextFromResponse(array $data): ?string
     {
-        if (!isset($data['output']) || !is_array($data['output'])) {
-            return null;
-        }
-
-        foreach ($data['output'] as $outputItem) {
-            if (!isset($outputItem['content']) || !is_array($outputItem['content'])) {
-                continue;
-            }
-
-            foreach ($outputItem['content'] as $contentItem) {
-                if (!empty($contentItem['text'])) {
-                    return $contentItem['text'];
-                }
-            }
-        }
-
-        return null;
+        return data_get($data, 'choices.0.message.content');
     }
 
     private function isResetCommand(string $message): bool
@@ -296,17 +280,19 @@ PROMPT;
 
     private function sendOpenAiRequest(array $inputMessages)
     {
-        $apiKey = (string) env('OPENAI_API_KEY', '');
-        if ($apiKey === '' || $apiKey === 'isi_api_key_kamu') {
-            Log::warning('OpenAI API key belum dikonfigurasi dengan benar.');
-            throw new \RuntimeException('Konfigurasi chatbot belum lengkap. Hubungi admin untuk mengisi OPENAI_API_KEY.');
-        }
+        $apiKey = (string) env('OPENROUTER_API_KEY', '');
 
         return Http::timeout(45)
-            ->withToken($apiKey)
-            ->post('https://api.openai.com/v1/responses', [
-                'model' => env('OPENAI_MODEL', 'gpt-4.1-mini'),
-                'input' => $inputMessages,
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Content-Type' => 'application/json',
+            ])
+            ->post('https://openrouter.ai/api/v1/chat/completions', [
+
+                'model' => env('OPENROUTER_MODEL'),
+
+                'messages' => $inputMessages,
+
             ]);
     }
 

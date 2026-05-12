@@ -26,10 +26,7 @@ Route::view('/syarat-ketentuan', 'pages.terms')->name('pages.terms');
 Route::view('/cara-belanja', 'pages.how-to-shop')->name('pages.how-to-shop');
 Route::view('/kontak-kami', 'pages.contact')->name('pages.contact');
 
-// Tambahkan route untuk /settings
-Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
-Route::put('/settings/profile', [\App\Http\Controllers\SettingController::class, 'updateProfile'])->name('settings.profile.update');
-Route::put('/settings/password', [\App\Http\Controllers\SettingController::class, 'updatePassword'])->name('settings.password.update');
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -49,6 +46,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         return redirect()->route('home');
     })->name('dashboard');
+
+    Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
+    Route::put('/settings/profile', [\App\Http\Controllers\SettingController::class, 'updateProfile'])->name('settings.profile.update');
+    Route::put('/settings/password', [\App\Http\Controllers\SettingController::class, 'updatePassword'])->name('settings.password.update');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\Order;
+use App\Models\User;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -55,7 +56,11 @@ class CheckoutController extends Controller
             }
         }
 
-        return view('checkout.index', compact('cart'));
+        $lastOrder = Order::where('user_id', auth()->id())
+            ->latest()
+            ->first();
+
+        return view('checkout.index', compact('cart', 'lastOrder'));
     }
 
     public function process(Request $request)
@@ -178,6 +183,12 @@ class CheckoutController extends Controller
             }
 
             $cart->items()->delete();
+
+            auth()->user()->update([
+                'phone'             => $request->customer_whatsapp,
+                'address'           => $request->shipping_address,
+                'house_landmark'    => $request->house_landmark,
+            ]);
 
             return $order;
         });

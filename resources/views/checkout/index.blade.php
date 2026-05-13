@@ -42,7 +42,7 @@
                         <input
                             type="text"
                             name="customer_whatsapp"
-                            value="{{ old('customer_whatsapp') }}"
+                            value="{{ old('customer_whatsapp', auth()->user()->phone ?? $lastOrder->customer_whatsapp ?? '') }}"
                             placeholder="Contoh: 082125052233"
                             required
                         >
@@ -58,7 +58,7 @@
                             rows="5"
                             placeholder="Contoh: Jl. Mawar No. 12, RT 03/RW 01, Bekasi Timur"
                             required
-                        >{{ old('shipping_address') }}</textarea>
+                        >{{ old('shipping_address', auth()->user()->address ?? $lastOrder->shipping_address ?? '') }}</textarea>
                         @error('shipping_address')
                             <small class="checkout-error">{{ $message }}</small>
                         @enderror
@@ -69,7 +69,7 @@
                         <input
                             type="text"
                             name="house_landmark"
-                            value="{{ old('house_landmark') }}"
+                            value="{{ old('house_landmark', auth()->user()->house_landmark ?? $lastOrder->house_landmark ?? '') }}"
                             placeholder="Contoh: dekat masjid, pagar hitam, samping warung"
                         >
                         @error('house_landmark')
@@ -83,7 +83,7 @@
                             name="notes"
                             rows="3"
                             placeholder="Contoh: tolong antar sore, hubungi dulu sebelum sampai"
-                        >{{ old('notes') }}</textarea>
+                        >{{ old('notes', $lastOrder->notes ?? '') }}</textarea>
                         @error('notes')
                             <small class="checkout-error">{{ $message }}</small>
                         @enderror

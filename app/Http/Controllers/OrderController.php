@@ -24,11 +24,17 @@ class OrderController extends Controller
         $orders = Order::where('user_id', auth()->id())
             ->with(['items.product', 'items.variant'])
             ->latest()
-            ->get();
+            ->paginate(10);
 
-        $totalOrders      = $orders->count();
-        $processingOrders = $orders->whereIn('order_status', ['pending', 'shipped'])->count();
-        $completedOrders  = $orders->where('order_status', 'completed')->count();
+        $totalOrders = Order::where('user_id', auth()->id())->count();
+
+        $processingOrders = Order::where('user_id', auth()->id())
+            ->whereIn('order_status', ['pending', 'shipped'])
+            ->count();
+
+        $completedOrders = Order::where('user_id', auth()->id())
+            ->where('order_status', 'completed')
+            ->count();
 
         return view('orders.index', compact(
             'orders',

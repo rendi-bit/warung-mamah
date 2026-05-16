@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 
 class ChatbotController extends Controller
 {
@@ -21,26 +23,31 @@ class ChatbotController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Deteksi pertanyaan produk
+        | Deteksi pertanyaan
         |--------------------------------------------------------------------------
         */
 
-$messageLower = strtolower($userMessage);
+        $messageLower = strtolower($userMessage);
 
-$isProductQuestion =
-    str_contains($messageLower, 'produk') ||
-    str_contains($messageLower, 'kategori') ||
-    str_contains($messageLower, 'stok') ||
-    str_contains($messageLower, 'harga') ||
-    str_contains($messageLower, 'sembako') ||
-    str_contains($messageLower, 'bumbu') ||
-    str_contains($messageLower, 'dapur') ||
-    str_contains($messageLower, 'rumah tangga') ||
-    str_contains($messageLower, 'kebutuhan rumah') ||
-    str_contains($messageLower, 'beras') ||
-    str_contains($messageLower, 'minyak') ||
-    str_contains($messageLower, 'gula') ||
-    str_contains($messageLower, 'tepung');
+        $isProductQuestion =
+            str_contains($messageLower, 'produk') ||
+            str_contains($messageLower, 'kategori') ||
+            str_contains($messageLower, 'stok') ||
+            str_contains($messageLower, 'harga') ||
+            str_contains($messageLower, 'sembako') ||
+            str_contains($messageLower, 'bumbu') ||
+            str_contains($messageLower, 'dapur') ||
+            str_contains($messageLower, 'rumah tangga') ||
+            str_contains($messageLower, 'kebutuhan rumah');
+
+        $isOrderQuestion =
+            str_contains($messageLower, 'pesanan') ||
+            str_contains($messageLower, 'order') ||
+            str_contains($messageLower, 'status') ||
+            str_contains($messageLower, 'pengiriman') ||
+            str_contains($messageLower, 'resi') ||
+            str_contains($messageLower, 'bayar');
+
         /*
         |--------------------------------------------------------------------------
         | Default ringan
@@ -52,11 +59,13 @@ $isProductQuestion =
             'Bumbu Dapur',
             'Kebutuhan Rumah Tangga'
         ];
+
         $products = [];
+        $orderData = [];
 
         /*
         |--------------------------------------------------------------------------
-        | Ambil data hanya jika perlu
+        | Ambil kategori dan produk jika diperlukan
         |--------------------------------------------------------------------------
         */
 
@@ -90,18 +99,50 @@ $isProductQuestion =
 
         /*
         |--------------------------------------------------------------------------
+        | Ambil data pesanan user
+        |--------------------------------------------------------------------------
+        */
+
+        if ($isOrderQuestion && Auth::check()) {
+
+            $latestOrder = Cache::remember(
+                'chatbot_order_' . Auth::id(),
+                60,
+                function () {
+                    return Order::where('user_id', Auth::id())
+                        ->latest()
+                        ->first();
+                }
+            );
+
+            if ($latestOrder) {
+
+                $orderData = [
+                    'kode_pesanan'      => $latestOrder->order_code,
+                    'status_pesanan'    => $latestOrder->order_status,
+                    'status_pembayaran' => $latestOrder->payment_status,
+                    'metode_pembayaran' => $latestOrder->payment_method,
+                    'total_belanja'     => $latestOrder->grand_total,
+                    'alamat_pengiriman' => $latestOrder->shipping_address,
+                ];
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
         | Context toko
         |--------------------------------------------------------------------------
         */
 
         $storeContext = [
-            'nama_toko'  => 'Toko Tika',
-            'deskripsi'  => 'Toko UMKM modern untuk kebutuhan harian.',
-            'jam_buka'   => '08:00 - 18:00 WIB',
-            'alamat'     => 'Pasar Rawa Kalong, Bekasi',
-            'kontak'     => '0821-2505-2233',
-            'kategori'   => $categories,
-            'produk'     => $products,
+            'nama_toko'     => 'Toko Tika',
+            'deskripsi'     => 'Toko UMKM modern untuk kebutuhan harian.',
+            'jam_buka'      => '08:00 - 18:00 WIB',
+            'alamat'        => 'Pasar Rawa Kalong, Bekasi',
+            'kontak'        => '0821-2505-2233',
+            'kategori'      => $categories,
+            'produk'        => $products,
+            'pesanan_user'  => $orderData,
         ];
 
         /*
@@ -119,7 +160,8 @@ Aturan:
 3. Maksimal 3-5 kalimat kecuali user meminta detail.
 4. Jangan mengarang stok atau harga.
 5. Gunakan konteks toko jika relevan.
-6. Kalau tidak tahu, jujur.
+6. Jika tersedia data pesanan user, gunakan untuk membantu menjawab status order, pembayaran, dan pengiriman.
+7. Kalau tidak tahu, jujur.
 PROMPT;
 
         $inputMessages = [

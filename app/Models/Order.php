@@ -25,15 +25,20 @@ class Order extends Model
         'restock_note',
         'payment_proof',
         'payment_confirmed_at',
+        'shipped_at',
+        'completed_at',
     ];
 
     protected $casts = [
-        'shipped_at'          => 'datetime',
-        'completed_at'        => 'datetime',
-        // ✅ FIX: Hapus duplikat — has_waiting_restock hanya didefinisikan sekali
-        'has_waiting_restock' => 'boolean',
+        'shipped_at'           => 'datetime',
+        'completed_at'         => 'datetime',
+        'has_waiting_restock'  => 'boolean',
         'payment_confirmed_at' => 'datetime',
     ];
+
+    // ─────────────────────────────────────────
+    // RELASI AKTIF
+    // ─────────────────────────────────────────
 
     public function user()
     {
@@ -45,13 +50,18 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    public function payment()
+    // ─────────────────────────────────────────
+    // HELPER
+    // ─────────────────────────────────────────
+
+    public function isPaid(): bool
     {
-        return $this->hasOne(Payment::class);
+        return $this->payment_status === 'paid';
     }
 
-    public function shipping()
+    public function isCancellable(): bool
     {
-        return $this->hasOne(Shipping::class);
+        return !in_array($this->order_status, ['shipped', 'completed', 'cancelled'])
+            && $this->created_at->gte(now()->subDay());
     }
 }

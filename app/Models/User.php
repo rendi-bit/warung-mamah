@@ -16,10 +16,8 @@ class User extends Authenticatable
         'role_id',
         'phone',
         'address',
-        'avatar',
-        'customer_whatsapp',
-        'shipping_address',
         'house_landmark',
+        'avatar',
     ];
 
     protected $hidden = [
@@ -31,9 +29,13 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
         ];
     }
+
+    // ─────────────────────────────────────────
+    // RELASI AKTIF
+    // ─────────────────────────────────────────
 
     public function role()
     {
@@ -50,8 +52,12 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
-    public function wishlist()
+    // ─────────────────────────────────────────
+    // HELPER
+    // ─────────────────────────────────────────
+
+    public function isAdmin(): bool
     {
-        return $this->hasOne(Wishlist::class);
+        return $this->role?->role_name === 'admin';
     }
 }

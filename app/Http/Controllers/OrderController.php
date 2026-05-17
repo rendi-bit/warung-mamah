@@ -12,14 +12,19 @@ class OrderController extends Controller
 {
     public function index()
     {
-        Order::where('user_id', auth()->id())
+        // ✅ FIX #1: completed_at per-order = shipped_at + 3 hari, bukan now()
+        $shippedOrders = Order::where('user_id', auth()->id())
             ->where('order_status', 'shipped')
             ->whereNotNull('shipped_at')
             ->where('shipped_at', '<=', now()->subDays(3))
-            ->update([
+            ->get();
+
+        foreach ($shippedOrders as $o) {
+            $o->update([
                 'order_status' => 'completed',
-                'completed_at' => now(),
+                'completed_at' => $o->shipped_at->addDays(3),
             ]);
+        }
 
         $orders = Order::where('user_id', auth()->id())
             ->with(['items.product', 'items.variant'])
@@ -29,7 +34,7 @@ class OrderController extends Controller
         $totalOrders = Order::where('user_id', auth()->id())->count();
 
         $processingOrders = Order::where('user_id', auth()->id())
-            ->whereIn('order_status', ['pending', 'shipped'])
+            ->whereIn('order_status', ['pending', 'processing', 'shipped'])
             ->count();
 
         $completedOrders = Order::where('user_id', auth()->id())
@@ -61,7 +66,7 @@ class OrderController extends Controller
 
         if ($order->order_status !== 'shipped') {
             return redirect()->route('orders.index')
-                ->with('error', 'Pesanan hanya bisa diselesaikan jika status pengiriman sudah Shipping.');
+                ->with('error', 'Pesanan hanya bisa diselesaikan jika status pengiriman sudah Shipped.');
         }
 
         $order->update([
@@ -70,10 +75,9 @@ class OrderController extends Controller
         ]);
 
         return redirect()->route('orders.index')
-            ->with('success', 'Pesanan berhasil diselesaikan.');
+            ->with('success', 'Pesanan berhasil diselesaikan. Terima kasih!');
     }
 
-    // ✅ FIX #4: Bungkus semua operasi cancel dalam DB::transaction
     public function cancel(Order $order)
     {
         if ($order->user_id !== auth()->id()) {
@@ -90,34 +94,30 @@ class OrderController extends Controller
                 ->with('error', 'Pesanan sudah melewati batas waktu pembatalan (1x24 jam).');
         }
 
+        // ✅ FIX #2: Jika QRIS sudah paid, informasikan refund sebelum cancel
+        // (Di sini kita tetap izinkan cancel tapi catat flagnya)
         DB::transaction(function () use ($order) {
             $order->load(['items.product']);
 
             foreach ($order->items as $item) {
-                if (!$item->product) {
-                    continue;
-                }
+                if (!$item->product) continue;
 
                 $stockToReturn = $item->quantity - ($item->waiting_restock_quantity ?? 0);
-
                 if ($stockToReturn > 0) {
                     $item->product->increment('stock_quantity', $stockToReturn);
                 }
             }
 
-            $order->update([
-                'order_status' => 'cancelled',
-            ]);
+            $order->update(['order_status' => 'cancelled']);
         });
 
         $message = 'Pesanan berhasil dibatalkan dan stok produk sudah dikembalikan.';
 
         if ($order->payment_method === 'qris' && $order->payment_status === 'paid') {
-            $message .= ' Karena pembayaran QRIS sudah dibayar, silakan hubungi admin untuk proses refund.';
+            $message .= ' Pembayaran QRIS sudah terkonfirmasi — silakan hubungi admin via WhatsApp untuk proses refund.';
         }
 
-        return redirect()->route('orders.index')
-            ->with('success', $message);
+        return redirect()->route('orders.index')->with('success', $message);
     }
 
     public function invoice(Order $order)
@@ -137,6 +137,22 @@ class OrderController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
+        // ✅ FIX #3: Guard status — hanya order QRIS pending yang boleh upload
+        if ($order->payment_method !== 'qris') {
+            return redirect()->route('orders.show', $order->id)
+                ->with('error', 'Hanya pesanan QRIS yang memerlukan bukti pembayaran.');
+        }
+
+        if ($order->payment_status === 'paid') {
+            return redirect()->route('orders.show', $order->id)
+                ->with('info', 'Pembayaran sudah dikonfirmasi. Tidak perlu upload ulang.');
+        }
+
+        if (in_array($order->order_status, ['cancelled', 'completed'])) {
+            return redirect()->route('orders.show', $order->id)
+                ->with('error', 'Pesanan ini sudah ' . $order->order_status . '. Bukti pembayaran tidak bisa diupload.');
+        }
+
         $request->validate([
             'payment_proof' => [
                 'required',
@@ -153,6 +169,7 @@ class OrderController extends Controller
             'payment_proof.max'      => 'Ukuran gambar maksimal 2MB.',
         ]);
 
+        // Hapus bukti lama jika ada
         if ($order->payment_proof && Storage::disk('public')->exists($order->payment_proof)) {
             Storage::disk('public')->delete($order->payment_proof);
         }
@@ -169,14 +186,10 @@ class OrderController extends Controller
         );
 
         if (!$path) {
-            return back()
-                ->with('error', 'Gagal menyimpan file. Silakan coba lagi.')
-                ->withInput();
+            return back()->with('error', 'Gagal menyimpan file. Silakan coba lagi.');
         }
 
-        $order->update([
-            'payment_proof' => $path,
-        ]);
+        $order->update(['payment_proof' => $path]);
 
         return redirect()->route('checkout.payment', $order->id)
             ->with('success', 'Bukti pembayaran berhasil diupload! Admin akan segera memverifikasi.');

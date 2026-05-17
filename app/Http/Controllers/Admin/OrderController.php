@@ -10,7 +10,6 @@ class OrderController extends Controller
 {
     public function index()
     {
-        // ✅ FIX: Pakai paginate(15) agar tidak loading semua data sekaligus
         $orders = Order::with('user')->latest()->paginate(15);
 
         return view('admin.orders.index', compact('orders'));
@@ -31,15 +30,9 @@ class OrderController extends Controller
         ]);
 
         if ($order->order_status === 'completed') {
-            $order->update([
-                'payment_status' => $request->payment_status,
-                'order_status'   => 'completed',
-                'completed_at'   => $order->completed_at ?? now(),
-            ]);
-
             return redirect()
                 ->route('admin.orders.show', $order->id)
-                ->with('success', 'Pesanan sudah selesai dan tidak diubah kembali.');
+                ->with('info', 'Pesanan sudah selesai dan tidak bisa diubah kembali.');
         }
 
         if ($request->order_status === 'shipped' && $order->has_waiting_restock) {
@@ -59,6 +52,10 @@ class OrderController extends Controller
             $data['shipped_at'] = now();
         }
 
+        if ($newStatus === 'completed' && !$order->completed_at) {
+            $data['completed_at'] = now();
+        }
+
         if ($newStatus === 'pending') {
             $data['shipped_at']   = null;
             $data['completed_at'] = null;
@@ -76,9 +73,10 @@ class OrderController extends Controller
         if ($order->payment_status === 'paid') {
             return redirect()
                 ->route('admin.orders.show', $order->id)
-                ->with('success', 'Pembayaran sudah dikonfirmasi sebelumnya.');
+                ->with('info', 'Pembayaran sudah dikonfirmasi sebelumnya.');
         }
 
+        // Konfirmasi pembayaran — order_status tetap pending, admin update manual ke shipped
         $order->update([
             'payment_status'       => 'paid',
             'payment_confirmed_at' => now(),
@@ -94,7 +92,7 @@ class OrderController extends Controller
         if (!$order->has_waiting_restock) {
             return redirect()
                 ->route('admin.orders.show', $order->id)
-                ->with('success', 'Pesanan ini sudah tidak memiliki item yang menunggu restok.');
+                ->with('info', 'Pesanan ini sudah tidak memiliki item yang menunggu restok.');
         }
 
         foreach ($order->items as $item) {
@@ -113,6 +111,6 @@ class OrderController extends Controller
 
         return redirect()
             ->route('admin.orders.show', $order->id)
-            ->with('success', 'Restok pesanan sudah ditandai terpenuhi. Pesanan sekarang bisa diproses ke Shipping.');
+            ->with('success', 'Restok terpenuhi. Pesanan sekarang bisa diproses ke Shipping.');
     }
 }

@@ -16,7 +16,6 @@ class DashboardController extends Controller
     {
         // ─────────────────────────────────────────
         // STAT CARDS — cache 5 menit
-        // Data ini tidak perlu real-time per detik
         // ─────────────────────────────────────────
         $stats = Cache::remember('admin_dashboard_stats', 300, function () {
 
@@ -24,9 +23,10 @@ class DashboardController extends Controller
             $totalProducts   = Product::count();
             $totalCategories = Category::count();
 
-            // ✅ FIX #2: Pakai kolom 'role' langsung, tidak pakai whereHas relasi
-            // Sesuaikan 'role' dan nilai 'user' dengan kolom di tabel users kamu
-            $totalCustomers = User::where('role_id', 'user')->count();
+            // ✅ role_name = 'customer' sesuai data tabel roles
+            $totalCustomers = User::whereHas('role', function ($q) {
+                $q->where('role_name', 'customer');
+            })->count();
 
             $todayRevenue = Order::where('payment_status', 'paid')
                 ->whereDate('created_at', today())
@@ -51,8 +51,7 @@ class DashboardController extends Controller
         });
 
         // ─────────────────────────────────────────
-        // CHART REVENUE 6 BULAN
-        // ✅ FIX #1: 1 query groupBy, bukan 6 query dalam loop
+        // CHART REVENUE 6 BULAN — 1 query groupBy
         // ─────────────────────────────────────────
         $revenueRows = Cache::remember('admin_dashboard_revenue_chart', 300, function () {
             return Order::where('payment_status', 'paid')
@@ -73,8 +72,8 @@ class DashboardController extends Controller
         $monthlyRevenueData   = [];
 
         for ($i = 5; $i >= 0; $i--) {
-            $month  = now()->subMonths($i);
-            $key    = $month->year . '-' . $month->month;
+            $month = now()->subMonths($i);
+            $key   = $month->year . '-' . $month->month;
 
             $monthlyRevenueLabels[] = $month->translatedFormat('M Y');
             $monthlyRevenueData[]   = (int) ($revenueRows[$key]->total ?? 0);
@@ -108,14 +107,16 @@ class DashboardController extends Controller
                 ->get();
         });
 
-        // Order & customer terbaru — tidak di-cache agar selalu fresh
+        // Tidak di-cache agar selalu fresh
         $latestOrders = Order::with('user')
             ->latest()
             ->take(6)
             ->get();
 
-        // ✅ FIX #3: Filter hanya role 'user', admin tidak masuk daftar
-        $latestCustomers = User::where('role_id', 'user')
+        // ✅ role_name = 'customer' sesuai data tabel roles
+        $latestCustomers = User::whereHas('role', function ($q) {
+                $q->where('role_name', 'customer');
+            })
             ->latest()
             ->take(6)
             ->get();

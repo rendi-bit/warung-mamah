@@ -164,10 +164,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <span>Pengaturan</span>
                         </a>
 
-                        <a href="{{ route('wishlist.index') }}">
-                            <i class="fas fa-heart"></i>
-                            <span>Favorit Saya</span>                    
-                        </a>
+
                         <a href="{{ route('orders.index') }}">
                             <i class="fas fa-bag-shopping"></i>
                             <span>Pesanan Saya</span>
@@ -215,7 +212,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             <span class="cart-badge">{{ $cartCount }}</span>
                         @endif
                     </a>
-                    <a href="{{ route('wishlist.index') }}">Favorit Saya</a>
                     <a href="{{ route('settings.index') }}">Pengaturan</a>
                
                     @endif
@@ -345,7 +341,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 @auth
                     <a href="{{ route('orders.index') }}">Pesanan Saya</a>
-                    <a href="{{ route('wishlist.index') }}">Favorit</a>
                 @endauth
 
                 @guest

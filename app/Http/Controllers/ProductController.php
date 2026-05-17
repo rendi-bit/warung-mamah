@@ -4,14 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
-use App\Models\ProductReview;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-   public function index(Request $request)
+    public function index(Request $request)
     {
-        $query = Product::with(['category', 'variants', 'reviews'])
+        $query = Product::with(['category', 'variants'])
             ->where('status', 'active');
 
         if ($request->filled('category')) {
@@ -35,13 +34,14 @@ class ProductController extends Controller
 
         return view('products.index', compact('products', 'categories'));
     }
+
     public function show($slug)
     {
-        $product = Product::with(['category', 'variants', 'reviews.user'])
+        $product = Product::with(['category', 'variants'])
             ->where('slug', $slug)
             ->firstOrFail();
 
-        $relatedProducts = Product::with(['category', 'variants', 'reviews'])
+        $relatedProducts = Product::with(['category', 'variants'])
             ->where('status', 'active')
             ->where('id', '!=', $product->id)
             ->where('category_id', $product->category_id)
@@ -49,6 +49,7 @@ class ProductController extends Controller
             ->take(4)
             ->get();
 
+        // Produk yang baru dilihat (session)
         $recent = session()->get('recent_products', []);
 
         if (!in_array($product->id, $recent)) {
@@ -58,24 +59,15 @@ class ProductController extends Controller
         $recent = array_slice($recent, 0, 5);
         session()->put('recent_products', $recent);
 
-        $recentProducts = Product::with(['category', 'variants', 'reviews'])
+        $recentProducts = Product::with(['category', 'variants'])
             ->whereIn('id', $recent)
             ->where('id', '!=', $product->id)
             ->get();
 
-        $reviews = ProductReview::with('user')
-            ->where('product_id', $product->id)
-            ->latest()
-            ->get();
-
-        $avgRating = $reviews->avg('rating');
-
         return view('products.show', compact(
             'product',
             'relatedProducts',
-            'recentProducts',
-            'reviews',
-            'avgRating'
+            'recentProducts'
         ));
     }
 
@@ -97,12 +89,12 @@ class ProductController extends Controller
 
         return response()->json($products->map(function ($product) {
             return [
-                'name' => $product->name,
+                'name'     => $product->name,
                 'category' => $product->category->category_name ?? 'Tanpa Kategori',
-                'price' => 'Rp ' . number_format($product->display_price ?? $product->price, 0, ',', '.'),
-                'image' => $product->image ? asset('storage/' . $product->image) : null,
-                'url' => route('products.show', $product->slug),
+                'price'    => 'Rp ' . number_format($product->display_price ?? $product->price, 0, ',', '.'),
+                'image'    => $product->image ? asset('storage/' . $product->image) : null,
+                'url'      => route('products.show', $product->slug),
             ];
         }));
     }
-}   
+}

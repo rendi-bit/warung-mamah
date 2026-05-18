@@ -96,7 +96,6 @@
                         </div>
                     </form>
 
-                    {{-- ✅ FIX: Hapus tombol wishlist --}}
                     <div class="product-action-modern">
                         <button
                             type="submit"
@@ -135,37 +134,15 @@
             </div>
         </div>
 
-        {{-- Tab Info Produk --}}
+        {{-- Tab: Deskripsi & Layanan saja --}}
         <div class="product-info-tabs product-info-tabs-full">
             <div class="tab-buttons">
                 <button type="button" class="tab-btn active" data-tab="desc">Deskripsi</button>
-                <button type="button" class="tab-btn" data-tab="info">Info Produk</button>
                 <button type="button" class="tab-btn" data-tab="service">Layanan</button>
             </div>
 
             <div class="tab-content active" id="tab-desc">
                 <p>{{ $product->description ?? 'Produk pilihan dari Toko Tika dengan kualitas terbaik untuk kebutuhan harian.' }}</p>
-            </div>
-
-            <div class="tab-content" id="tab-info">
-                <div class="info-list">
-                    <div>
-                        <span>Nama Produk</span>
-                        <strong>{{ $product->name }}</strong>
-                    </div>
-                    <div>
-                        <span>Kategori</span>
-                        <strong>{{ $product->category->category_name ?? '-' }}</strong>
-                    </div>
-                    <div>
-                        <span>Stok</span>
-                        <strong>{{ $product->stock_label }}</strong>
-                    </div>
-                    <div>
-                        <span>Status</span>
-                        <strong>{{ ucfirst($product->status ?? 'active') }}</strong>
-                    </div>
-                </div>
             </div>
 
             <div class="tab-content" id="tab-service">
@@ -234,7 +211,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Ganti harga saat pilih varian
     const variantSelect = document.getElementById('variant_id');
     const priceElement  = document.getElementById('product-price');
 
@@ -247,10 +223,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Kontrol qty
-    const qtyInput  = document.getElementById('quantity');
-    const minusBtn  = document.querySelector('.qty-minus');
-    const plusBtn   = document.querySelector('.qty-plus');
+    const qtyInput = document.getElementById('quantity');
+    const minusBtn = document.querySelector('.qty-minus');
+    const plusBtn  = document.querySelector('.qty-plus');
 
     if (qtyInput && minusBtn && plusBtn) {
         minusBtn.addEventListener('click', function () {
@@ -263,15 +238,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Modal stok
-    const detailCartForm    = document.getElementById('detailCartForm');
-    const stockWarningModal = document.getElementById('stockWarningModal');
-    const stockWarningClose = document.getElementById('stockWarningClose');
-    const reduceToStockBtn  = document.getElementById('reduceToStockBtn');
-    const waitRestockBtn    = document.getElementById('waitRestockBtn');
+    const detailCartForm      = document.getElementById('detailCartForm');
+    const stockWarningModal   = document.getElementById('stockWarningModal');
+    const stockWarningClose   = document.getElementById('stockWarningClose');
+    const reduceToStockBtn    = document.getElementById('reduceToStockBtn');
+    const waitRestockBtn      = document.getElementById('waitRestockBtn');
     const allowWaitingRestock = document.getElementById('allow_waiting_restock');
-    const availableStock    = {{ (int) $product->stock_quantity }};
-    let pendingSubmitter    = null;
+    const availableStock      = {{ (int) $product->stock_quantity }};
+    let pendingSubmitter      = null;
 
     if (detailCartForm && qtyInput && stockWarningModal) {
         detailCartForm.addEventListener('submit', function (event) {
@@ -303,7 +277,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Tab
     document.querySelectorAll('.tab-btn').forEach(function (button) {
         button.addEventListener('click', function () {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));

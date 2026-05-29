@@ -189,7 +189,10 @@ class OrderController extends Controller
             return back()->with('error', 'Gagal menyimpan file. Silakan coba lagi.');
         }
 
-        $order->update(['payment_proof' => $path]);
+        $order->update([
+            'payment_proof' => $path,
+            'order_status'  => 'waiting_confirmation',
+        ]);
 
         return redirect()->route('checkout.payment', $order->id)
             ->with('success', 'Bukti pembayaran berhasil diupload! Admin akan segera memverifikasi.');

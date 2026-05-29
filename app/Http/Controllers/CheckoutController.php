@@ -123,89 +123,116 @@ class CheckoutController extends Controller
         $restockNote       = $hasWaitingRestock ? 'Pesanan memiliki item yang menunggu restok.' : null;
 
         try {
-            $order = DB::transaction(function () use (
-                $request,
-                $cart,
-                $subtotal,
-                $shippingCost,
-                $grandTotal,
-                $orderCode,
-                $hasWaitingRestock,
-                $restockNote
-            ) {
-                // ✅ FIX #1: Cek & kurangi stok di dalam transaction dengan lockForUpdate()
-                // Ini mencegah race condition ketika 2 user checkout produk yang sama bersamaan.
-                foreach ($cart->items as $item) {
-                    $product = Product::lockForUpdate()->find($item->product_id);
+            if ($request->payment_method === 'qris') {
 
-                    if (!$product) {
-                        throw new \Exception(
-                            'Produk tidak ditemukan. Silakan perbarui keranjang Anda.'
+                session([
+                    'checkout_data' => [
+                        'shipping_address'  => $request->shipping_address,
+                        'customer_whatsapp' => $request->customer_whatsapp,
+                        'house_landmark'    => $request->house_landmark,
+                        'notes'             => $request->notes,
+                        'delivery_method'   => $request->delivery_method,
+                        'payment_method'    => $request->payment_method,
+                    ]
+                ]);
+
+                return redirect()->route('checkout.payment.temp');
+            }
+            try {
+
+                DB::transaction(function () use (
+                    $request,
+                    $cart,
+                    $subtotal,
+                    $shippingCost,
+                    $grandTotal,
+                    $orderCode,
+                    $hasWaitingRestock,
+                    $restockNote
+                ) {
+
+                    foreach ($cart->items as $item) {
+
+                        $product = Product::lockForUpdate()
+                            ->find($item->product_id);
+
+                        if (!$product) {
+                            throw new \Exception('Produk tidak ditemukan.');
+                        }
+
+                        if (
+                            !$item->is_waiting_restock &&
+                            $item->quantity > $product->stock_quantity
+                        ) {
+                            throw new \Exception(
+                                $this->stockErrorMessage($product)
+                            );
+                        }
+
+                        $stockToReduce = min(
+                            $item->quantity,
+                            $product->stock_quantity
                         );
+
+                        if ($stockToReduce > 0) {
+                            $product->decrement(
+                                'stock_quantity',
+                                $stockToReduce
+                            );
+                        }
                     }
 
-                    if (!$item->is_waiting_restock && $item->quantity > $product->stock_quantity) {
-                        throw new \Exception($this->stockErrorMessage($product));
-                    }
-
-                    // Kurangi stok sebatas yang tersedia (sisanya masuk restock queue)
-                    $stockToReduce = min($item->quantity, $product->stock_quantity);
-                    if ($stockToReduce > 0) {
-                        $product->decrement('stock_quantity', $stockToReduce);
-                    }
-                }
-
-                // Buat order setelah semua stok valid
-                $order = Order::create([
-                    'order_code'          => $orderCode,
-                    'user_id'             => auth()->id(),
-                    'subtotal'            => $subtotal,
-                    'shipping_cost'       => $shippingCost,
-                    'discount_amount'     => 0,
-                    'grand_total'         => $grandTotal,
-                    'payment_method'      => $request->payment_method,
-                    'payment_status'      => 'pending',
-                    'order_status'        => 'pending',
-                    'shipping_address'    => $request->shipping_address,
-                    'customer_whatsapp'   => $request->customer_whatsapp,
-                    'house_landmark'      => $request->house_landmark,
-                    'delivery_method'     => $request->delivery_method,
-                    'notes'               => $request->notes,
-                    'has_waiting_restock' => $hasWaitingRestock,
-                    'restock_note'        => $restockNote,
-                ]);
-
-                // Buat order items
-                foreach ($cart->items as $item) {
-                    $price = $item->variant
-                        ? $item->variant->price
-                        : $item->product->price;
-
-                    OrderItem::create([
-                        'order_id'                 => $order->id,
-                        'product_id'               => $item->product_id,
-                        'variant_id'               => $item->variant_id,
-                        'quantity'                 => $item->quantity,
-                        'price'                    => $price,
-                        'subtotal'                 => $price * $item->quantity,
-                        'is_waiting_restock'       => $item->is_waiting_restock,
-                        'waiting_restock_quantity' => $item->waiting_restock_quantity ?? 0,
+                    $order = Order::create([
+                        'order_code'          => $orderCode,
+                        'user_id'             => auth()->id(),
+                        'subtotal'            => $subtotal,
+                        'shipping_cost'       => $shippingCost,
+                        'discount_amount'     => 0,
+                        'grand_total'         => $grandTotal,
+                        'payment_method'      => 'cod',
+                        'payment_status'      => 'pending',
+                        'order_status'        => 'processed',
+                        'shipping_address'    => $request->shipping_address,
+                        'customer_whatsapp'   => $request->customer_whatsapp,
+                        'house_landmark'      => $request->house_landmark,
+                        'delivery_method'     => $request->delivery_method,
+                        'notes'               => $request->notes,
+                        'has_waiting_restock' => $hasWaitingRestock,
+                        'restock_note'        => $restockNote,
                     ]);
-                }
 
-                // Kosongkan keranjang
-                $cart->items()->delete();
+                    foreach ($cart->items as $item) {
 
-                // ✅ Update profil user hanya jika field kosong (jangan timpa data lama)
-                $user = auth()->user();
-                $user->update([
-                    'phone'          => $user->phone ?: $request->customer_whatsapp,
-                    'address'        => $user->address ?: $request->shipping_address,
-                    'house_landmark' => $user->house_landmark ?: $request->house_landmark,
-                ]);
+                        $price = $item->variant
+                            ? $item->variant->price
+                            : $item->product->price;
 
-                return $order;
-            });
+                        OrderItem::create([
+                            'order_id'                 => $order->id,
+                            'product_id'               => $item->product_id,
+                            'variant_id'               => $item->variant_id,
+                            'quantity'                 => $item->quantity,
+                            'price'                    => $price,
+                            'subtotal'                 => $price * $item->quantity,
+                            'is_waiting_restock'       => $item->is_waiting_restock,
+                            'waiting_restock_quantity' => $item->waiting_restock_quantity ?? 0,
+                        ]);
+                    }
+
+                    $cart->items()->delete();
+
+                });
+
+            } catch (\Exception $e) {
+
+                return redirect()
+                    ->route('cart.index')
+                    ->with('error', $e->getMessage());
+            }
+
+            return redirect()
+                ->route('orders.index')
+                ->with('success', 'Pesanan COD berhasil dibuat.');
 
         } catch (\Exception $e) {
             // ✅ FIX #2: Tampilkan pesan error yang spesifik ke user
@@ -214,40 +241,152 @@ class CheckoutController extends Controller
                 ->with('error', $e->getMessage() ?: 'Terjadi kesalahan saat checkout. Silakan coba lagi.');
         }
 
-        if ($request->payment_method === 'cod') {
-            return redirect()
-                ->route('orders.index')
-                ->with('success', 'Pesanan berhasil dibuat! Pembayaran dilakukan secara COD saat barang tiba.');
-        }
-
-        return redirect()
-            ->route('checkout.payment', $order->id)
-            ->with('success', 'Pesanan berhasil dibuat! Silakan selesaikan pembayaran QRIS Anda.');
     }
-
     /**
      * Halaman pembayaran QRIS.
      */
-    public function payment(Order $order)
+
+    public function tempPayment()
     {
-        // ✅ Pastikan order milik user yang sedang login
-        if ($order->user_id !== auth()->id()) {
-            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        if (!session()->has('checkout_data')) {
+            return redirect()->route('checkout.index');
         }
 
-        if ($order->payment_method === 'cod') {
+        return view('checkout.payment-temp');
+    }
+
+    public function finalize(Request $request)
+    {
+        $request->validate([
+            'payment_proof' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        if (!session()->has('checkout_data')) {
+            return redirect()->route('checkout.index');
+        }
+
+        $checkout = session('checkout_data');
+
+        $cart = Cart::where('user_id', auth()->id())
+            ->with(['items.product', 'items.variant'])
+            ->first();
+
+        if (!$cart || $cart->items->isEmpty()) {
             return redirect()
-                ->route('orders.index')
-                ->with('info', 'Pesanan ini menggunakan pembayaran COD, tidak memerlukan halaman pembayaran.');
+                ->route('cart.index')
+                ->with('error', 'Keranjang kosong.');
         }
 
-        // ✅ Jika sudah dibayar, jangan tampilkan halaman pembayaran lagi
-        if ($order->payment_status === 'paid') {
+        $subtotal = 0;
+
+        foreach ($cart->items as $item) {
+
+            $price = $item->variant
+                ? $item->variant->price
+                : $item->product->price;
+
+            $subtotal += $price * $item->quantity;
+        }
+
+        $shippingCost = $checkout['delivery_method'] === 'ojek_toko'
+            ? 10000
+            : 0;
+
+        $grandTotal = $subtotal + $shippingCost;
+
+        $proofPath = $request->file('payment_proof')
+            ->store('payment_proofs', 'public');
+
+        try {
+
+            DB::transaction(function () use (
+                $cart,
+                $checkout,
+                $subtotal,
+                $shippingCost,
+                $grandTotal,
+                $proofPath
+            ) {
+
+                foreach ($cart->items as $item) {
+
+                    $product = Product::lockForUpdate()
+                        ->find($item->product_id);
+
+                    if (!$product) {
+                        throw new \Exception('Produk tidak ditemukan.');
+                    }
+
+                    if (
+                        !$item->is_waiting_restock &&
+                        $item->quantity > $product->stock_quantity
+                    ) {
+                        throw new \Exception(
+                            $this->stockErrorMessage($product)
+                        );
+                    }
+
+                    $stockToReduce = min(
+                        $item->quantity,
+                        $product->stock_quantity
+                    );
+
+                    if ($stockToReduce > 0) {
+                        $product->decrement(
+                            'stock_quantity',
+                            $stockToReduce
+                        );
+                    }
+                }
+
+                $order = Order::create([
+                    'order_code'        => $this->generateShortOrderCode(),
+                    'user_id'           => auth()->id(),
+                    'subtotal'          => $subtotal,
+                    'shipping_cost'     => $shippingCost,
+                    'discount_amount'   => 0,
+                    'grand_total'       => $grandTotal,
+                    'payment_method'    => 'qris',
+                    'payment_status'    => 'pending',
+                    'order_status'      => 'waiting_confirmation',
+                    'shipping_address'  => $checkout['shipping_address'],
+                    'customer_whatsapp' => $checkout['customer_whatsapp'],
+                    'house_landmark'    => $checkout['house_landmark'],
+                    'delivery_method'   => $checkout['delivery_method'],
+                    'notes'             => $checkout['notes'],
+                    'payment_proof'     => $proofPath,
+                ]);
+
+                foreach ($cart->items as $item) {
+
+                    $price = $item->variant
+                        ? $item->variant->price
+                        : $item->product->price;
+
+                    OrderItem::create([
+                        'order_id'   => $order->id,
+                        'product_id' => $item->product_id,
+                        'variant_id' => $item->variant_id,
+                        'quantity'   => $item->quantity,
+                        'price'      => $price,
+                        'subtotal'   => $price * $item->quantity,
+                    ]);
+                }
+
+                $cart->items()->delete();
+            });
+
+        } catch (\Exception $e) {
+
             return redirect()
-                ->route('orders.show', $order->id)
-                ->with('info', 'Pesanan ini sudah dibayar.');
+                ->route('cart.index')
+                ->with('error', $e->getMessage());
         }
 
-        return view('checkout.payment', compact('order'));
+        session()->forget('checkout_data');
+
+        return redirect()
+            ->route('orders.index')
+            ->with('success', 'Pesanan berhasil dibuat dan menunggu konfirmasi admin.');
     }
 }

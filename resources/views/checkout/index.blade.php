@@ -74,20 +74,7 @@
                     </div>
 
                     <div class="checkout-field">
-                        <label>Patokan Rumah <small style="color:#9ca3af;">(opsional)</small></label>
-                        <input
-                            type="text"
-                            name="house_landmark"
-                            value="{{ old('house_landmark', auth()->user()->house_landmark ?? $lastOrder->house_landmark ?? '') }}"
-                            placeholder="Contoh: dekat masjid, pagar hitam, samping warung"
-                        >
-                        @error('house_landmark')
-                            <small class="checkout-error">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="checkout-field">
-                        <label>Catatan Pesanan <small style="color:#9ca3af;">(opsional)</small></label>
+                        <label>Catatan Pesanan</label>
                         <textarea
                             name="notes"
                             rows="3"

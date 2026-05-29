@@ -25,7 +25,6 @@ Route::view('/faq', 'pages.faq')->name('pages.faq');
 Route::view('/kebijakan-privasi', 'pages.privacy')->name('pages.privacy');
 Route::view('/syarat-ketentuan', 'pages.terms')->name('pages.terms');
 Route::view('/cara-belanja', 'pages.how-to-shop')->name('pages.how-to-shop');
-Route::view('/kontak-kami', 'pages.contact')->name('pages.contact');
 
 // ─────────────────────────────────────────
 // USER ROUTES (harus login)
@@ -58,13 +57,18 @@ Route::middleware('auth')->group(function () {
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
-    Route::get('/checkout/payment/{order}', [CheckoutController::class, 'payment'])->name('checkout.payment');
+    Route::get('/checkout/payment-temp', [CheckoutController::class, 'tempPayment'])->name('checkout.payment.temp');
+    Route::post('/checkout/finalize', [CheckoutController::class, 'finalize'])->name('checkout.finalize');
 
     // Chatbot — rate limit 15 request/menit
     Route::post('/chatbot/ask', [ChatbotController::class, 'ask'])
         ->name('chatbot.ask')
         ->middleware('throttle:15,1');
-});
+
+    // Tambahkan di dalam middleware auth
+    Route::post('/chatbot/reset', [ChatbotController::class, 'reset'])
+        ->name('chatbot.reset');
+    });
 
 // ─────────────────────────────────────────
 // ADMIN ROUTES

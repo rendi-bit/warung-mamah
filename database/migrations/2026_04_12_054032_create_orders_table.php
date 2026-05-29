@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('grand_total', 12, 2)->default(0);
             $table->string('payment_method')->nullable();
             $table->enum('payment_status', ['pending', 'paid', 'failed'])->default('pending');
-            $table->enum('order_status', ['pending', 'processed', 'shipped', 'completed', 'cancelled'])->default('pending');
+            $table->enum('order_status', ['waiting_payment','waiting_confirmation','processed','shipped','completed','cancelled'])->default('waiting_payment');
             $table->text('shipping_address');
             $table->text('notes')->nullable();
             $table->timestamps();

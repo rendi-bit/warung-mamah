@@ -1670,3 +1670,60 @@
         grid-template-columns: 1fr;
     }
 }
+
+.service-wrapper{
+    margin-top:20px;
+}
+
+.service-title{
+    font-size:20px;
+    font-weight:700;
+    margin-bottom:16px;
+    color:#7c3f00;
+}
+
+.service-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:18px;
+}
+
+.service-card{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    background:#fff;
+    border:1px solid #ead8c7;
+    border-radius:16px;
+    padding:16px;
+    transition:0.2s ease;
+}
+
+.service-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 20px rgba(0,0,0,0.05);
+}
+
+.service-icon{
+    font-size:24px;
+    flex-shrink:0;
+}
+
+.service-card h5{
+    margin:0;
+    font-size:16px;
+    color:#3d220c;
+}
+
+.service-card p{
+    margin-top:4px;
+    font-size:14px;
+    color:#6b5b4d;
+    line-height:1.5;
+}
+
+@media(max-width:768px){
+    .service-grid{
+        grid-template-columns:1fr;
+    }
+}

@@ -10,7 +10,10 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $orders = Order::with('user')->latest()->paginate(15);
+        $orders = Order::with('user')
+            ->where('order_status', '!=', 'waiting_payment')
+            ->latest()
+            ->paginate(15);
 
         return view('admin.orders.index', compact('orders'));
     }
@@ -26,7 +29,7 @@ class OrderController extends Controller
     {
         $request->validate([
             'payment_status' => 'required|in:pending,paid,failed',
-            'order_status'   => 'required|in:pending,shipped,completed',
+            'order_status' => 'required|in:waiting_payment,waiting_confirmation,processed,shipped,completed,cancelled',
         ]);
 
         if ($order->order_status === 'completed') {
@@ -76,9 +79,9 @@ class OrderController extends Controller
                 ->with('info', 'Pembayaran sudah dikonfirmasi sebelumnya.');
         }
 
-        // Konfirmasi pembayaran — order_status tetap pending, admin update manual ke shipped
         $order->update([
             'payment_status'       => 'paid',
+            'order_status'         => 'processed',
             'payment_confirmed_at' => now(),
         ]);
 

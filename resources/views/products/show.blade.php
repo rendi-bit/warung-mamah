@@ -146,14 +146,56 @@
             </div>
 
             <div class="tab-content" id="tab-service">
-                <div class="service-list">
-                    <div>✅ Produk berkualitas dan aman digunakan</div>
-                    <div>📦 Pesanan diproses dengan teliti</div>
-                    <div>🛒 Cocok untuk kebutuhan rumah tangga</div>
-                    <div>🤎 Mendukung UMKM lokal</div>
+                <div class="service-wrapper">
+
+                    <h4 class="service-title">Metode Pembayaran</h4>
+
+                    <div class="service-grid">
+                        <div class="service-card">
+                            <div class="service-icon">📱</div>
+
+                            <div>
+                                <h5>QRIS</h5>
+                                <p>Pembayaran mudah menggunakan QRIS.</p>
+                            </div>
+                        </div>
+
+                        <div class="service-card">
+                            <div class="service-icon">💵</div>
+
+                            <div>
+                                <h5>COD</h5>
+                                <p>Bayar langsung saat pesanan diterima.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 class="service-title" style="margin-top: 28px;">
+                        Pengantaran / Pengambilan
+                    </h4>
+
+                    <div class="service-grid">
+                        <div class="service-card">
+                            <div class="service-icon">🛵</div>
+
+                            <div>
+                                <h5>Diantar Ojek Warung</h5>
+                                <p>Pesanan diantar menggunakan ojek warung.</p>
+                            </div>
+                        </div>
+
+                        <div class="service-card">
+                            <div class="service-icon">🏪</div>
+
+                            <div>
+                                <h5>Ambil ke Warung</h5>
+                                <p>Ambil pesanan langsung ke warung kami.</p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
-        </div>
 
         {{-- Produk Terkait --}}
         @if($relatedProducts->count())

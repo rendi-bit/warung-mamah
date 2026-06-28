@@ -12,21 +12,16 @@ use Illuminate\Support\Facades\DB;
 
 class CheckoutController extends Controller
 {
-    /**
-     * Generate kode order unik 5 karakter.
-     * Menggunakan loop dengan batas maksimal untuk mencegah infinite loop.
-     */
     private function generateShortOrderCode(): string
     {
         $maxAttempts = 10;
-        $attempt = 0;
+        $attempt     = 0;
 
         do {
             $code = strtoupper(Str::random(5));
             $attempt++;
 
             if ($attempt >= $maxAttempts) {
-                // Fallback: tambahkan timestamp agar pasti unik
                 $code = strtoupper(Str::random(3)) . substr(time(), -2);
                 break;
             }
@@ -35,9 +30,6 @@ class CheckoutController extends Controller
         return $code;
     }
 
-    /**
-     * Pesan error stok yang informatif untuk user.
-     */
     private function stockErrorMessage($product): string
     {
         return 'Maaf, stok ' . $product->name . ' saat ini tidak mencukupi. ' .
@@ -46,8 +38,24 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Halaman checkout — validasi keranjang sebelum tampil.
+     * ✅ Helper: Kurangi stok produk
+     * - is_waiting_restock = true  → stok boleh minus (kurangi penuh)
+     * - is_waiting_restock = false → stok dikurangi normal (tidak minus)
      */
+    private function reduceStock(Product $product, $item): void
+    {
+        if ($item->is_waiting_restock) {
+            // Stok boleh minus — kurangi penuh sesuai qty dipesan
+            $product->decrement('stock_quantity', $item->quantity);
+        } else {
+            // Stok normal — kurangi sebatas stok yang ada
+            $stockToReduce = min($item->quantity, $product->stock_quantity);
+            if ($stockToReduce > 0) {
+                $product->decrement('stock_quantity', $stockToReduce);
+            }
+        }
+    }
+
     public function index()
     {
         $cart = Cart::where('user_id', auth()->id())
@@ -55,8 +63,7 @@ class CheckoutController extends Controller
             ->first();
 
         if (!$cart || $cart->items->isEmpty()) {
-            return redirect()
-                ->route('cart.index')
+            return redirect()->route('cart.index')
                 ->with('error', 'Keranjang belanja kosong.');
         }
 
@@ -64,29 +71,21 @@ class CheckoutController extends Controller
             $product = $item->product;
 
             if (!$product) {
-                return redirect()
-                    ->route('cart.index')
+                return redirect()->route('cart.index')
                     ->with('error', 'Ada produk yang tidak ditemukan. Silakan perbarui keranjang Anda.');
             }
 
             if (!$item->is_waiting_restock && $item->quantity > $product->stock_quantity) {
-                return redirect()
-                    ->route('cart.index')
+                return redirect()->route('cart.index')
                     ->with('error', $this->stockErrorMessage($product));
             }
         }
 
-        $lastOrder = Order::where('user_id', auth()->id())
-            ->latest()
-            ->first();
+        $lastOrder = Order::where('user_id', auth()->id())->latest()->first();
 
         return view('checkout.index', compact('cart', 'lastOrder'));
     }
 
-    /**
-     * Proses checkout — semua validasi stok & pengurangan stok di dalam transaction.
-     * Menggunakan lockForUpdate() untuk mencegah race condition.
-     */
     public function process(Request $request)
     {
         $request->validate([
@@ -103,83 +102,56 @@ class CheckoutController extends Controller
             ->first();
 
         if (!$cart || $cart->items->isEmpty()) {
-            return redirect()
-                ->route('cart.index')
+            return redirect()->route('cart.index')
                 ->with('error', 'Keranjang belanja kosong.');
         }
 
-        // Hitung subtotal dari data keranjang saat ini
         $subtotal = 0;
         foreach ($cart->items as $item) {
             $price    = $item->variant ? $item->variant->price : $item->product->price;
             $subtotal += $price * $item->quantity;
         }
 
-        $shippingCost = $request->delivery_method === 'ojek_toko' ? 10000 : 0;
-        $grandTotal   = $subtotal + $shippingCost;
-        $orderCode    = $this->generateShortOrderCode();
-
+        $shippingCost      = $request->delivery_method === 'ojek_toko' ? 10000 : 0;
+        $grandTotal        = $subtotal + $shippingCost;
+        $orderCode         = $this->generateShortOrderCode();
         $hasWaitingRestock = $cart->items->contains('is_waiting_restock', true);
         $restockNote       = $hasWaitingRestock ? 'Pesanan memiliki item yang menunggu restok.' : null;
 
         try {
+            // QRIS — simpan ke session lalu ke halaman payment-temp
             if ($request->payment_method === 'qris') {
-
-                session([
-                    'checkout_data' => [
-                        'shipping_address'  => $request->shipping_address,
-                        'customer_whatsapp' => $request->customer_whatsapp,
-                        'house_landmark'    => $request->house_landmark,
-                        'notes'             => $request->notes,
-                        'delivery_method'   => $request->delivery_method,
-                        'payment_method'    => $request->payment_method,
-                    ]
-                ]);
+                session(['checkout_data' => [
+                    'shipping_address'  => $request->shipping_address,
+                    'customer_whatsapp' => $request->customer_whatsapp,
+                    'house_landmark'    => $request->house_landmark,
+                    'notes'             => $request->notes,
+                    'delivery_method'   => $request->delivery_method,
+                    'payment_method'    => $request->payment_method,
+                ]]);
 
                 return redirect()->route('checkout.payment.temp');
             }
+
+            // COD
             try {
-
                 DB::transaction(function () use (
-                    $request,
-                    $cart,
-                    $subtotal,
-                    $shippingCost,
-                    $grandTotal,
-                    $orderCode,
-                    $hasWaitingRestock,
-                    $restockNote
+                    $request, $cart, $subtotal, $shippingCost,
+                    $grandTotal, $orderCode, $hasWaitingRestock, $restockNote
                 ) {
-
                     foreach ($cart->items as $item) {
-
-                        $product = Product::lockForUpdate()
-                            ->find($item->product_id);
+                        $product = Product::lockForUpdate()->find($item->product_id);
 
                         if (!$product) {
                             throw new \Exception('Produk tidak ditemukan.');
                         }
 
-                        if (
-                            !$item->is_waiting_restock &&
-                            $item->quantity > $product->stock_quantity
-                        ) {
-                            throw new \Exception(
-                                $this->stockErrorMessage($product)
-                            );
+                        if (!$item->is_waiting_restock && $item->quantity > $product->stock_quantity) {
+                            throw new \Exception($this->stockErrorMessage($product));
                         }
 
-                        $stockToReduce = min(
-                            $item->quantity,
-                            $product->stock_quantity
-                        );
-
-                        if ($stockToReduce > 0) {
-                            $product->decrement(
-                                'stock_quantity',
-                                $stockToReduce
-                            );
-                        }
+                        // ✅ FIX: Gunakan helper reduceStock
+                        $this->reduceStock($product, $item);
                     }
 
                     $order = Order::create([
@@ -202,10 +174,7 @@ class CheckoutController extends Controller
                     ]);
 
                     foreach ($cart->items as $item) {
-
-                        $price = $item->variant
-                            ? $item->variant->price
-                            : $item->product->price;
+                        $price = $item->variant ? $item->variant->price : $item->product->price;
 
                         OrderItem::create([
                             'order_id'                 => $order->id,
@@ -220,31 +189,21 @@ class CheckoutController extends Controller
                     }
 
                     $cart->items()->delete();
-
                 });
 
             } catch (\Exception $e) {
-
-                return redirect()
-                    ->route('cart.index')
+                return redirect()->route('cart.index')
                     ->with('error', $e->getMessage());
             }
 
-            return redirect()
-                ->route('orders.index')
+            return redirect()->route('orders.index')
                 ->with('success', 'Pesanan COD berhasil dibuat.');
 
         } catch (\Exception $e) {
-            // ✅ FIX #2: Tampilkan pesan error yang spesifik ke user
-            return redirect()
-                ->route('cart.index')
+            return redirect()->route('cart.index')
                 ->with('error', $e->getMessage() ?: 'Terjadi kesalahan saat checkout. Silakan coba lagi.');
         }
-
     }
-    /**
-     * Halaman pembayaran QRIS.
-     */
 
     public function tempPayment()
     {
@@ -272,71 +231,37 @@ class CheckoutController extends Controller
             ->first();
 
         if (!$cart || $cart->items->isEmpty()) {
-            return redirect()
-                ->route('cart.index')
+            return redirect()->route('cart.index')
                 ->with('error', 'Keranjang kosong.');
         }
 
         $subtotal = 0;
-
         foreach ($cart->items as $item) {
-
-            $price = $item->variant
-                ? $item->variant->price
-                : $item->product->price;
-
+            $price    = $item->variant ? $item->variant->price : $item->product->price;
             $subtotal += $price * $item->quantity;
         }
 
-        $shippingCost = $checkout['delivery_method'] === 'ojek_toko'
-            ? 10000
-            : 0;
-
-        $grandTotal = $subtotal + $shippingCost;
-
-        $proofPath = $request->file('payment_proof')
-            ->store('payment_proofs', 'public');
+        $shippingCost = $checkout['delivery_method'] === 'ojek_toko' ? 10000 : 0;
+        $grandTotal   = $subtotal + $shippingCost;
+        $proofPath    = $request->file('payment_proof')->store('payment_proofs', 'public');
 
         try {
-
             DB::transaction(function () use (
-                $cart,
-                $checkout,
-                $subtotal,
-                $shippingCost,
-                $grandTotal,
-                $proofPath
+                $cart, $checkout, $subtotal, $shippingCost, $grandTotal, $proofPath
             ) {
-
                 foreach ($cart->items as $item) {
-
-                    $product = Product::lockForUpdate()
-                        ->find($item->product_id);
+                    $product = Product::lockForUpdate()->find($item->product_id);
 
                     if (!$product) {
                         throw new \Exception('Produk tidak ditemukan.');
                     }
 
-                    if (
-                        !$item->is_waiting_restock &&
-                        $item->quantity > $product->stock_quantity
-                    ) {
-                        throw new \Exception(
-                            $this->stockErrorMessage($product)
-                        );
+                    if (!$item->is_waiting_restock && $item->quantity > $product->stock_quantity) {
+                        throw new \Exception($this->stockErrorMessage($product));
                     }
 
-                    $stockToReduce = min(
-                        $item->quantity,
-                        $product->stock_quantity
-                    );
-
-                    if ($stockToReduce > 0) {
-                        $product->decrement(
-                            'stock_quantity',
-                            $stockToReduce
-                        );
-                    }
+                    // ✅ FIX: Gunakan helper reduceStock
+                    $this->reduceStock($product, $item);
                 }
 
                 $order = Order::create([
@@ -358,10 +283,7 @@ class CheckoutController extends Controller
                 ]);
 
                 foreach ($cart->items as $item) {
-
-                    $price = $item->variant
-                        ? $item->variant->price
-                        : $item->product->price;
+                    $price = $item->variant ? $item->variant->price : $item->product->price;
 
                     OrderItem::create([
                         'order_id'   => $order->id,
@@ -377,16 +299,13 @@ class CheckoutController extends Controller
             });
 
         } catch (\Exception $e) {
-
-            return redirect()
-                ->route('cart.index')
+            return redirect()->route('cart.index')
                 ->with('error', $e->getMessage());
         }
 
         session()->forget('checkout_data');
 
-        return redirect()
-            ->route('orders.index')
+        return redirect()->route('orders.index')
             ->with('success', 'Pesanan berhasil dibuat dan menunggu konfirmasi admin.');
     }
 }

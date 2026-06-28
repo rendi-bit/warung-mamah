@@ -85,7 +85,7 @@ class DashboardController extends Controller
         $lowStockProducts = Cache::remember('admin_dashboard_lowstock', 120, function () {
             return Product::with('category')
                 ->where('stock_quantity', '<=', 5)
-                ->latest()
+                ->orderBy('stock_quantity', 'asc') // negatif duluan
                 ->take(6)
                 ->get();
         });

@@ -1109,3 +1109,35 @@
     background: #d1fae5;
     color: #065f46;
 }
+
+/* ─────────────────────────────────────────
+   TAMBAHKAN DI BAGIAN BAWAH admin.css
+───────────────────────────────────────── */
+
+/* Badge stok — base */
+.admin-stock-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Stok normal (1-5) — kuning */
+.admin-stock-badge.stock-low {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Stok habis (0) — merah */
+.admin-stock-badge.stock-empty {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Stok negatif (minus) — ungu/gelap dengan tanda peringatan */
+.admin-stock-badge.stock-minus {
+    background: #ede9fe;
+    color: #5b21b6;
+}

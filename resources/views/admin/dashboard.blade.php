@@ -20,36 +20,28 @@
         {{-- 4 KPI CARDS --}}
         <div class="admin-kpi-premium-grid">
             <div class="admin-kpi-premium-card">
-                <div class="admin-kpi-icon brown">
-                    <i class="fas fa-bag-shopping"></i>
-                </div>
+                <div class="admin-kpi-icon brown"><i class="fas fa-bag-shopping"></i></div>
                 <span>Total Pesanan</span>
                 <strong>{{ $totalOrders }}</strong>
                 <p>Jumlah order tercatat pada sistem.</p>
             </div>
 
             <div class="admin-kpi-premium-card">
-                <div class="admin-kpi-icon green">
-                    <i class="fas fa-money-bill-wave"></i>
-                </div>
+                <div class="admin-kpi-icon green"><i class="fas fa-money-bill-wave"></i></div>
                 <span>Pemasukan Hari Ini</span>
                 <strong>Rp {{ number_format($todayRevenue ?? 0, 0, ',', '.') }}</strong>
                 <p>Total pemasukan dari order yang sudah dibayar hari ini.</p>
             </div>
 
             <div class="admin-kpi-premium-card">
-                <div class="admin-kpi-icon blue">
-                    <i class="fas fa-calendar-days"></i>
-                </div>
+                <div class="admin-kpi-icon blue"><i class="fas fa-calendar-days"></i></div>
                 <span>Pemasukan Bulan Ini</span>
                 <strong>Rp {{ number_format($monthlyRevenue ?? 0, 0, ',', '.') }}</strong>
                 <p>Total pemasukan bulan berjalan.</p>
             </div>
 
             <div class="admin-kpi-premium-card">
-                <div class="admin-kpi-icon orange">
-                    <i class="fas fa-bell"></i>
-                </div>
+                <div class="admin-kpi-icon orange"><i class="fas fa-bell"></i></div>
                 <span>Order Baru</span>
                 <strong>{{ $newOrdersCount ?? 0 }}</strong>
                 <p>Pesanan pending yang perlu dicek admin.</p>
@@ -102,23 +94,19 @@
                 </div>
                 <div class="admin-quick-list">
                     <a href="{{ route('admin.products.create') }}">
-                        <i class="fas fa-plus"></i>
-                        <span>Tambah Produk</span>
+                        <i class="fas fa-plus"></i><span>Tambah Produk</span>
                         <i class="fas fa-chevron-right admin-quick-arrow"></i>
                     </a>
                     <a href="{{ route('admin.products.index') }}">
-                        <i class="fas fa-box-open"></i>
-                        <span>Kelola Produk</span>
+                        <i class="fas fa-box-open"></i><span>Kelola Produk</span>
                         <i class="fas fa-chevron-right admin-quick-arrow"></i>
                     </a>
                     <a href="{{ route('admin.categories.index') }}">
-                        <i class="fas fa-layer-group"></i>
-                        <span>Kelola Kategori</span>
+                        <i class="fas fa-layer-group"></i><span>Kelola Kategori</span>
                         <i class="fas fa-chevron-right admin-quick-arrow"></i>
                     </a>
                     <a href="{{ route('admin.orders.index') }}">
-                        <i class="fas fa-receipt"></i>
-                        <span>Kelola Pesanan</span>
+                        <i class="fas fa-receipt"></i><span>Kelola Pesanan</span>
                         <i class="fas fa-chevron-right admin-quick-arrow"></i>
                     </a>
                 </div>
@@ -137,6 +125,7 @@
                 </div>
                 <div class="admin-mini-list">
                     @forelse($lowStockProducts as $product)
+                        {{-- ✅ FIX: div admin-product-alert-row ditutup dengan benar --}}
                         <div class="admin-product-alert-row">
                             <div class="admin-product-alert-img">
                                 @if($product->image)
@@ -145,14 +134,29 @@
                                     <i class="fas fa-box"></i>
                                 @endif
                             </div>
+
                             <div>
                                 <strong>{{ $product->name }}</strong>
                                 <span>{{ $product->category->category_name ?? '-' }}</span>
                             </div>
-                            <small class="admin-stock-warning">
-                                {{ $product->stock_quantity }} {{ $product->stock_unit }}
-                            </small>
+
+                            {{-- ✅ FIX: Label stok sesuai kondisi --}}
+                            @if($product->stock_quantity < 0)
+                                <small class="admin-stock-badge stock-minus">
+                                    {{ $product->stock_quantity }} {{ $product->stock_unit }}
+                                </small>
+                            @elseif($product->stock_quantity == 0)
+                                <small class="admin-stock-badge stock-empty">
+                                    Habis
+                                </small>
+                            @else
+                                <small class="admin-stock-badge stock-low">
+                                    {{ $product->stock_quantity }} {{ $product->stock_unit }}
+                                </small>
+                            @endif
                         </div>
+                        {{-- ✅ Tutup div admin-product-alert-row di sini --}}
+
                     @empty
                         <div class="admin-empty-mini">
                             <i class="fas fa-check-circle" style="color:#10b981;font-size:20px;"></i>
@@ -172,9 +176,7 @@
                 <div class="admin-mini-list">
                     @forelse($bestSellingProducts as $index => $product)
                         <div class="admin-product-alert-row">
-                            <div class="admin-rank-badge rank-{{ $index + 1 }}">
-                                #{{ $index + 1 }}
-                            </div>
+                            <div class="admin-rank-badge rank-{{ $index + 1 }}">#{{ $index + 1 }}</div>
                             <div class="admin-product-alert-img">
                                 @if($product->image)
                                     <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}">

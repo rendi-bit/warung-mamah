@@ -23,31 +23,34 @@ class Product extends Model
         'status',
     ];
 
+    // ─────────────────────────────────────────
+    // RELASI AKTIF
+    // ─────────────────────────────────────────
+
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
-    public function reviews()
-    {
-    return $this->hasMany(ProductReview::class);
-    }
-
     public function variants()
     {
-    return $this->hasMany(ProductVariant::class);
-    }
-
-    public function getDisplayPriceAttribute()
-    {
-        return $this->variants->count()
-        ? $this->variants->min('price')
-        : $this->price;
+        return $this->hasMany(ProductVariant::class);
     }
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    // ─────────────────────────────────────────
+    // HELPER / ACCESSOR
+    // ─────────────────────────────────────────
+
+    public function getDisplayPriceAttribute()
+    {
+        return $this->variants->count()
+            ? $this->variants->min('price')
+            : $this->price;
     }
 
     public function getStockLabelAttribute()

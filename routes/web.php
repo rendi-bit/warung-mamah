@@ -86,6 +86,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('/orders', AdminOrderController::class)->only(['index', 'show', 'update']);
     Route::patch('/orders/{order}/confirm-payment', [AdminOrderController::class, 'confirmPayment'])->name('orders.confirm-payment');
     Route::patch('/orders/{order}/fulfill-restock', [AdminOrderController::class, 'fulfillRestock'])->name('orders.fulfillRestock');
+    Route::patch('/orders/{order}/items/{item}/restock', [AdminOrderController::class, 'restockItem'])->name('orders.restockItem');
 });
 
 require __DIR__.'/auth.php';

@@ -53,11 +53,20 @@ class Product extends Model
             : $this->price;
     }
 
+    /**
+     * ✅ FIX: Stok untuk tampilan USER
+     * Kalau stok minus → tampilkan 0 (user tidak perlu tahu stok negatif)
+     * Kalau stok normal → tampilkan apa adanya
+     */
     public function getStockLabelAttribute()
     {
-        return $this->stock_quantity . ' ' . $this->stock_unit;
+        $qty = max(0, $this->stock_quantity);
+        return $qty . ' ' . $this->stock_unit;
     }
 
+    /**
+     * Stok untuk tampilan ADMIN — tampilkan nilai asli termasuk minus
+     */
     public function getAdminStockLabelAttribute()
     {
         if ($this->stock_mode === 'dus') {

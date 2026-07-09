@@ -121,7 +121,6 @@
                         <h3>Stok Hampir Habis</h3>
                         <p>Produk dengan stok 5 atau kurang.</p>
                     </div>
-                    <a href="{{ route('admin.products.index') }}">Kelola</a>
                 </div>
                 <div class="admin-mini-list">
                     @forelse($lowStockProducts as $product)

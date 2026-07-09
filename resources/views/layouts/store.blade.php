@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="container site-nav">
             <div class="brand">
                 <span class="brand-badge brand-logo-image">
-                    <img src="{{ asset('storage/avatars/mamah.jpeg') }}" alt="Logo Toko Tika">
+                    <img src="{{ asset('storage/avatars/logo.png') }}" alt="Logo Toko Tika">
                 </span>
                 <div>
                     <h1>TOKO TIKA</h1>

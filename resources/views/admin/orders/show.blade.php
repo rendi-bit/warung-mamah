@@ -66,8 +66,24 @@
                         </span>
                     </div>
                     <div class="checkout-item-row">
+                        <strong>Kelurahan</strong>
+                        <span>{{ $order->shippingArea->kelurahan ?? '-' }}</span>
+                    </div>
+                    <div class="checkout-item-row">
                         <strong>Alamat</strong>
                         <span>{{ $order->shipping_address }}</span>
+                    </div>
+                    <div class="checkout-item-row">
+                        <strong>Ongkir</strong>
+                        <span>Rp {{ number_format($order->shipping_cost, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="checkout-item-row">
+                        <strong>Metode Pengiriman</strong>
+                        <span>
+                            {{ $order->delivery_method === 'ojek_toko'
+                                ? 'Ojek Toko'
+                                : 'Ambil di Toko' }}
+                        </span>
                     </div>
                 </div>
             </div>

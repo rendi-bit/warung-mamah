@@ -37,7 +37,7 @@
                         <option value="kg">Kg</option>
                         <option value="gram">Gram</option>
                         <option value="liter">Liter</option>
-                        <option value="ikat">Ikat</option>
+                        <option value="kaleng">Kaleng</option>
                     </select>
 
                     <div id="stock_satuan_box">

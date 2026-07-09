@@ -16,7 +16,7 @@
     <main class="auth-simple-page">
         <a href="{{ route('home') }}" class="auth-simple-brand">
             <span class="auth-simple-logo auth-simple-logo-img">
-                <img src="{{ asset('storage/avatars/mamah.jpeg') }}" alt="Logo Toko Tika">
+                <img src="{{ asset('storage/avatars/logo.png') }}" alt="Logo Toko Tika">
             </span>
 
             <div>

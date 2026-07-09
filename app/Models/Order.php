@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\ShippingArea;
 use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
@@ -9,6 +10,7 @@ class Order extends Model
     protected $fillable = [
         'order_code',
         'user_id',
+        'shipping_area_id',
         'subtotal',
         'shipping_cost',
         'discount_amount',
@@ -48,6 +50,12 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+
+    public function shippingArea()
+    {
+        return $this->belongsTo(ShippingArea::class);
     }
 
     // ─────────────────────────────────────────

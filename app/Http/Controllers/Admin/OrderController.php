@@ -11,17 +11,20 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $orders = Order::with('user')
-            ->where('order_status', '!=', 'waiting_payment')
-            ->latest()
-            ->paginate(15);
+        $orders = Order::with([
+            'user',
+            'shippingArea'
+        ])
+        ->where('order_status', '!=', 'waiting_payment')
+        ->latest()
+        ->paginate(15);
 
         return view('admin.orders.index', compact('orders'));
     }
 
     public function show(Order $order)
     {
-        $order->load(['user', 'items.product', 'items.variant']);
+        $order->load(['user','shippingArea','items.product','items.variant']);
 
         return view('admin.orders.show', compact('order'));
     }

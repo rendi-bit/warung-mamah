@@ -48,7 +48,7 @@
                         <div class="payment-qris-box">
 
                             <img
-                                src="{{ asset('storage/avatars/qris.jpeg') }}"
+                                src="{{ asset('storage/avatars/gopay.jpeg') }}"
                                 alt="QRIS"
                                 class="payment-qris-image"
                             >

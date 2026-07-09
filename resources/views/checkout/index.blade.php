@@ -74,6 +74,34 @@
                     </div>
 
                     <div class="checkout-field">
+                        <label>Kelurahan</label>
+
+                        <select
+                            name="shipping_area"
+                            id="shipping_area"
+                            required>
+
+                            <option value="">
+                                Pilih Kelurahan
+                            </option>
+
+                            @foreach($shippingAreas as $area)
+
+                            <option
+                                value="{{ $area->id }}"
+                                data-cost="{{ $area->shipping_cost }}">
+
+                                {{ $area->kelurahan }}
+
+                            </option>
+
+                            @endforeach
+
+                        </select>
+
+                    </div>
+
+                    <div class="checkout-field">
                         <label>Catatan Pesanan</label>
                         <textarea
                             name="notes"
@@ -112,8 +140,8 @@
                             </div>
                             <div>
                                 <strong>Pengiriman Ojek Toko</strong>
-                                <p>Dikirim oleh kurir/ojek pribadi toko khusus area Bekasi Timur.</p>
-                                <span>Rp {{ number_format($ojekCost, 0, ',', '.') }}</span>
+                                <p>Dikirim oleh kurir pribadi Toko Tika khusus wilayah Bekasi Timur.</p>
+                                <span id="deliveryCostInfo">Pilih kelurahan untuk melihat ongkir.</span>
                             </div>
                         </label>
 
@@ -198,7 +226,7 @@
                         </div>
                         <div>
                             <span>Ongkir</span>
-                            <strong id="shippingCostText">Rp {{ number_format($ojekCost, 0, ',', '.') }}</strong>
+                            <strong id="shippingCostText">Pilih Kelurahan</strong>
                         </div>
                     </div>
 
@@ -266,21 +294,53 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const formatRupiah = n => 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
 
+    const areaSelect = document.getElementById('shipping_area');
+
     const updateTotal = function () {
-        const selected     = document.querySelector('input[name="delivery_method"]:checked');
-        const shippingCost = selected ? parseInt(selected.dataset.cost) : 0;
-        const subtotal     = parseInt(subtotalValue.value) || 0;
 
-        shippingText.textContent   = shippingCost === 0 ? 'Gratis' : formatRupiah(shippingCost);
-        grandTotalText.textContent = formatRupiah(subtotal + shippingCost);
+        const selectedDelivery = document.querySelector(
+            'input[name="delivery_method"]:checked'
+        );
 
-        deliveryCards.forEach(c => c.classList.remove('active'));
-        if (selected) selected.closest('.delivery-option-card').classList.add('active');
+        const subtotal = parseInt(subtotalValue.value) || 0;
+
+        let shippingCost = 0;
+
+        if (selectedDelivery.value === "ojek_toko") {
+
+            if (areaSelect.value !== "") {
+
+                shippingCost = parseInt(
+                    areaSelect.options[
+                        areaSelect.selectedIndex
+                    ].dataset.cost
+                );
+
+            }
+
+        }
+
+        shippingText.textContent =
+            shippingCost === 0
+                ? "Gratis"
+                : formatRupiah(shippingCost);
+
+        grandTotalText.textContent =
+            formatRupiah(subtotal + shippingCost);
+
+        deliveryCards.forEach(card =>
+            card.classList.remove("active")
+        );
+
+        selectedDelivery
+            .closest(".delivery-option-card")
+            .classList.add("active");
     };
 
     deliveryInputs.forEach(i => i.addEventListener('change', updateTotal));
+    areaSelect.addEventListener('change', updateTotal);
 
-    // ✅ Disable tombol submit agar tidak double-submit
+    // Disable tombol submit agar tidak double-submit
     document.querySelector('.checkout-modern-form').addEventListener('submit', function () {
         checkoutBtn.disabled    = true;
         checkoutBtn.textContent = '⏳ Memproses...';

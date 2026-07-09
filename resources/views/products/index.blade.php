@@ -182,22 +182,12 @@
                 </h3>
 
                 <p>
-                    Jelajahi kategori produk lainnya, simpan favoritmu, dan lanjutkan belanja
+                    Jelajahi kategori produk lainnya dan lanjutkan belanja
                     dengan pengalaman yang nyaman dan modern.
                 </p>
 
                 <div class="products-bottom-actions">
-                    <a 
-                        href="{{ route('products.index') }}" 
-                        class="btn btn-primary"
-                    >
-                        Lihat Semua Produk
-                    </a>
-
-                    <a 
-                        href="{{ route('cart.index') }}" 
-                        class="btn btn-light"
-                    >
+                    <a href="{{ route('cart.index') }}" class="btn btn-light">
                         Buka Keranjang
                     </a>
                 </div>

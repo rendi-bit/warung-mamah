@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\OrderItem;
+use App\Models\ShippingArea;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -83,7 +84,13 @@ class CheckoutController extends Controller
 
         $lastOrder = Order::where('user_id', auth()->id())->latest()->first();
 
-        return view('checkout.index', compact('cart', 'lastOrder'));
+        $shippingAreas = ShippingArea::orderBy('kelurahan')->get();
+
+        return view('checkout.index', compact(
+            'cart',
+            'lastOrder',
+            'shippingAreas'
+        ));
     }
 
     public function process(Request $request)
@@ -91,6 +98,7 @@ class CheckoutController extends Controller
         $request->validate([
             'shipping_address'  => 'required|string|max:1000',
             'customer_whatsapp' => 'required|string|max:30',
+            'shipping_area'     => 'required|exists:shipping_areas,id',
             'house_landmark'    => 'nullable|string|max:255',
             'notes'             => 'nullable|string|max:1000',
             'delivery_method'   => 'required|in:ojek_toko,ambil_di_toko',
@@ -112,7 +120,16 @@ class CheckoutController extends Controller
             $subtotal += $price * $item->quantity;
         }
 
-        $shippingCost      = $request->delivery_method === 'ojek_toko' ? 10000 : 0;
+        $shippingCost = 0;
+
+        if ($request->delivery_method === 'ojek_toko') {
+
+            $shippingArea = ShippingArea::findOrFail(
+                $request->shipping_area
+            );
+
+            $shippingCost = $shippingArea->shipping_cost;
+        }
         $grandTotal        = $subtotal + $shippingCost;
         $orderCode         = $this->generateShortOrderCode();
         $hasWaitingRestock = $cart->items->contains('is_waiting_restock', true);
@@ -124,6 +141,8 @@ class CheckoutController extends Controller
                 session(['checkout_data' => [
                     'shipping_address'  => $request->shipping_address,
                     'customer_whatsapp' => $request->customer_whatsapp,
+                    'shipping_area'     => $request->shipping_area,
+                    'shipping_cost'     => $shippingCost,
                     'house_landmark'    => $request->house_landmark,
                     'notes'             => $request->notes,
                     'delivery_method'   => $request->delivery_method,
@@ -157,6 +176,7 @@ class CheckoutController extends Controller
                     $order = Order::create([
                         'order_code'          => $orderCode,
                         'user_id'             => auth()->id(),
+                        'shipping_area_id' => $request->shipping_area,
                         'subtotal'            => $subtotal,
                         'shipping_cost'       => $shippingCost,
                         'discount_amount'     => 0,
@@ -241,7 +261,7 @@ class CheckoutController extends Controller
             $subtotal += $price * $item->quantity;
         }
 
-        $shippingCost = $checkout['delivery_method'] === 'ojek_toko' ? 10000 : 0;
+        $shippingCost = $checkout['shipping_cost'];
         $grandTotal   = $subtotal + $shippingCost;
         $proofPath    = $request->file('payment_proof')->store('payment_proofs', 'public');
 
@@ -267,6 +287,7 @@ class CheckoutController extends Controller
                 $order = Order::create([
                     'order_code'        => $this->generateShortOrderCode(),
                     'user_id'           => auth()->id(),
+                    'shipping_area_id' => $checkout['shipping_area'],
                     'subtotal'          => $subtotal,
                     'shipping_cost'     => $shippingCost,
                     'discount_amount'   => 0,

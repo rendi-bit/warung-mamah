@@ -88,20 +88,33 @@
 
                 <div class="admin-variant-box">
                     <h3>Varian Produk</h3>
-                    <p class="text-muted">Tambahkan ukuran / berat seperti 1/4 kg, 1/2 kg, 1 kg.</p>
+
+                    <p class="text-muted">
+                        Tambahkan ukuran atau berat produk beserta harganya.
+                    </p>
 
                     <div id="variant-wrapper">
                         <div class="variant-row">
-                            <input type="text" name="variants[0][variant_name]" placeholder="Contoh: 1/4 kg">
-                            <input type="number" name="variants[0][price]" placeholder="Harga">
+                            <input
+                                type="text"
+                                name="variants[0][variant_name]"
+                                placeholder="Ukuran / Berat">
+
+                            <input
+                                type="number"
+                                name="variants[0][price]"
+                                placeholder="Harga">
                         </div>
                     </div>
 
-                    <button type="button" id="add-variant-btn" class="btn btn-light" style="margin-top: 14px;">
+                    <button
+                        type="button"
+                        id="add-variant-btn"
+                        class="btn btn-light"
+                        style="margin-top:14px;">
                         + Tambah Varian
                     </button>
                 </div>
-
                 <div style="margin-top: 24px;">
                     <button type="submit" class="btn-warung">Simpan</button>
                 </div>
@@ -122,8 +135,15 @@
                 row.classList.add('variant-row');
 
                 row.innerHTML = `
-                    <input type="text" name="variants[${variantIndex}][variant_name]" placeholder="Contoh: 1/2 kg">
-                    <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga">
+                    <input
+                        type="text"
+                        name="variants[${variantIndex}][variant_name]"
+                        placeholder="Ukuran / Berat">
+
+                    <input
+                        type="number"
+                        name="variants[${variantIndex}][price]"
+                        placeholder="Harga">
                 `;
 
                 wrapper.appendChild(row);

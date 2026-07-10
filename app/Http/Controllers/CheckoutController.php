@@ -9,6 +9,7 @@ use App\Models\OrderItem;
 use App\Models\ShippingArea;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CheckoutController extends Controller
@@ -59,7 +60,7 @@ class CheckoutController extends Controller
 
     public function index()
     {
-        $cart = Cart::where('user_id', auth()->id())
+        $cart = Cart::where('user_id', Auth::id())
             ->with(['items.product', 'items.variant'])
             ->first();
 
@@ -82,7 +83,7 @@ class CheckoutController extends Controller
             }
         }
 
-        $lastOrder = Order::where('user_id', auth()->id())->latest()->first();
+        $lastOrder = Order::where('user_id', Auth::id())->latest()->first();
 
         $shippingAreas = ShippingArea::orderBy('kelurahan')->get();
 
@@ -105,7 +106,7 @@ class CheckoutController extends Controller
             'payment_method'    => 'required|in:qris,cod',
         ]);
 
-        $cart = Cart::where('user_id', auth()->id())
+        $cart = Cart::where('user_id', Auth::id())
             ->with(['items.product', 'items.variant'])
             ->first();
 
@@ -175,7 +176,7 @@ class CheckoutController extends Controller
 
                     $order = Order::create([
                         'order_code'          => $orderCode,
-                        'user_id'             => auth()->id(),
+                        'user_id'             => Auth::id(),
                         'shipping_area_id' => $request->shipping_area,
                         'subtotal'            => $subtotal,
                         'shipping_cost'       => $shippingCost,
@@ -246,7 +247,7 @@ class CheckoutController extends Controller
 
         $checkout = session('checkout_data');
 
-        $cart = Cart::where('user_id', auth()->id())
+        $cart = Cart::where('user_id', Auth::id())
             ->with(['items.product', 'items.variant'])
             ->first();
 
@@ -286,7 +287,7 @@ class CheckoutController extends Controller
 
                 $order = Order::create([
                     'order_code'        => $this->generateShortOrderCode(),
-                    'user_id'           => auth()->id(),
+                    'user_id'           => Auth::id(),
                     'shipping_area_id' => $checkout['shipping_area'],
                     'subtotal'          => $subtotal,
                     'shipping_cost'     => $shippingCost,

@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -70,7 +71,7 @@ class ProductController extends Controller
             'box_stock' => $request->stock_mode === 'dus' ? $request->box_stock : null,
             'restock_estimation' => $request->restock_estimation,
             'category_id' => $request->category_id,
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'image' => $imagePath,
             'status' => 'active',
         ]);

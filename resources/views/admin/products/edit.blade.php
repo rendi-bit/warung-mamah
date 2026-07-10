@@ -136,15 +136,15 @@
                     <h3>Varian Produk</h3>
                     <p class="text-muted">Edit ukuran / berat produk di bawah ini.</p>
 
-                    <div id="variant-wrapper">
+                    <div id="variant-wrapper" data-count="{{ $product->variants->count() }}">
                         @forelse($product->variants as $index => $variant)
                             <div class="variant-row">
-                                <input type="text" name="variants[{{ $index }}][variant_name]" value="{{ $variant->variant_name }}" placeholder="Contoh: 1/4 kg">
+                                <input type="text" name="variants[{{ $index }}][variant_name]" value="{{ $variant->variant_name }}" placeholder="Contoh: 250 Gram">
                                 <input type="number" name="variants[{{ $index }}][price]" value="{{ $variant->price }}" placeholder="Harga">
                             </div>
                         @empty
                             <div class="variant-row">
-                                <input type="text" name="variants[0][variant_name]" placeholder="Contoh: 1/4 kg">
+                                <input type="text" name="variants[0][variant_name]" placeholder="Contoh: 250 Gram">
                                 <input type="number" name="variants[0][price]" placeholder="Harga">
                             </div>
                         @endforelse
@@ -165,8 +165,8 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    let variantIndex = {{ $product->variants->count() }};
     const wrapper = document.getElementById('variant-wrapper');
+    let variantIndex = Number(wrapper.dataset.count);
     const addBtn = document.getElementById('add-variant-btn');
 
     if (addBtn && wrapper) {
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
             row.classList.add('variant-row');
 
             row.innerHTML = `
-                <input type="text" name="variants[${variantIndex}][variant_name]" placeholder="Contoh: 1/2 kg">
+                <input type="text" name="variants[${variantIndex}][variant_name]" placeholder="Contoh: 500 Gram">
                 <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga">
             `;
 
@@ -225,6 +225,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     updateStockView();
-});
+    });
 </script>
 @endsection

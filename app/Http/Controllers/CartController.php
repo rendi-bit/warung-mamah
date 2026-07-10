@@ -7,6 +7,7 @@ use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
@@ -87,7 +88,7 @@ class CartController extends Controller
     {
         $this->validateVariant($product, $variantId);
 
-        $cart = Cart::firstOrCreate(['user_id' => auth()->id()]);
+        $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
 
         $item = CartItem::where('cart_id', $cart->id)
             ->where('product_id', $product->id)
@@ -128,7 +129,7 @@ class CartController extends Controller
      */
     public function index()
     {
-        $cart = Cart::firstOrCreate(['user_id' => auth()->id()]);
+        $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
 
         $items = $cart->items()->with(['product', 'variant'])->get();
 
@@ -171,7 +172,7 @@ class CartController extends Controller
         $item = CartItem::with('product')->findOrFail($id);
 
         // ✅ Pastikan item milik cart user yang login
-        $cart = Cart::where('user_id', auth()->id())->firstOrFail();
+        $cart = Cart::where('user_id', Auth::id())->firstOrFail();
         if ($item->cart_id !== $cart->id) {
             abort(403, 'Akses ditolak.');
         }
@@ -203,7 +204,7 @@ class CartController extends Controller
         $item = CartItem::findOrFail($id);
 
         // ✅ Pastikan item milik cart user yang login
-        $cart = Cart::where('user_id', auth()->id())->firstOrFail();
+        $cart = Cart::where('user_id', Auth::id())->firstOrFail();
         if ($item->cart_id !== $cart->id) {
             abort(403, 'Akses ditolak.');
         }

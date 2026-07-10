@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const reduceToStockBtn    = document.getElementById('reduceToStockBtn');
     const waitRestockBtn      = document.getElementById('waitRestockBtn');
     const allowWaitingRestock = document.getElementById('allow_waiting_restock');
-    const availableStock      = {{ (int) $product->stock_quantity }};
+    const availableStock = Number("{{ $product->stock_quantity }}");
     let pendingSubmitter      = null;
 
     if (detailCartForm && qtyInput && stockWarningModal) {

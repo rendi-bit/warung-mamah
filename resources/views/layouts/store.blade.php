@@ -64,8 +64,9 @@ document.addEventListener('DOMContentLoaded', function () {
             <nav class="nav-menu">
                 @auth
                     @if($isAdmin)
-                        <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'is-active' : '' }}">Dashboard</a>
-                        <a href="{{ route('admin.products.index') }}" class="{{ request()->routeIs('admin.products.*') ? 'is-active' : '' }}">Produk</a>
+                        <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'is-active' : '' }}">
+                            Dashboard
+                        </a>
                     @else
                         <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}">Home</a>
                         <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') ? 'is-active' : '' }}">Produk</a>
@@ -123,8 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                             <div class="profile-menu-links">
                                 @if($isAdmin)
-                                    <a href="{{ route('admin.dashboard') }}"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
-                                    <a href="{{ route('admin.products.index') }}"><i class="fas fa-box-open"></i><span>Produk</span></a>
+                                    <a href="{{ route('admin.dashboard') }}">Dashboard</a>
                                 @else
                                     <a href="{{ route('settings.index') }}"><i class="fas fa-gear"></i><span>Pengaturan</span></a>
                                     <a href="{{ route('orders.index') }}"><i class="fas fa-bag-shopping"></i><span>Pesanan Saya</span></a>
@@ -159,7 +159,6 @@ document.addEventListener('DOMContentLoaded', function () {
             @auth
                 @if($isAdmin)
                     <a href="{{ route('admin.dashboard') }}">Dashboard</a>
-                    <a href="{{ route('admin.products.index') }}">Produk</a>
                 @else
                     <a href="{{ route('home') }}">Home</a>
                     <a href="{{ route('products.index') }}">Produk</a>
@@ -239,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="footer-brand">
                 <div class="footer-logo-row">
                     <span class="footer-logo">
-                        <img src="{{ asset('storage/avatars/mamah.jpeg') }}" alt="Logo Toko Tika">
+                        <img src="{{ asset('storage/avatars/logo.png') }}" alt="Logo Toko Tika">
                     </span>
                     <div>
                         <h3>TOKO TIKA</h3>
@@ -306,7 +305,6 @@ document.addEventListener('DOMContentLoaded', function () {
     <nav class="mobile-quick-actions {{ $isAdmin ? 'admin-quick-actions' : '' }}">
         @if($isAdmin)
             <a href="{{ route('admin.dashboard') }}">Dashboard</a>
-            <a href="{{ route('admin.products.index') }}">Produk</a>
         @else
             <a href="{{ route('home') }}">Home</a>
             <a href="{{ route('products.index') }}">Produk</a>

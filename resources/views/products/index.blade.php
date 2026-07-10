@@ -169,33 +169,6 @@
             @endif
 
         @endif
-
-        <div class="products-bottom-cta">
-            <div class="products-bottom-cta-box">
-
-                <span class="products-bottom-badge">
-                    Masih Cari Produk?
-                </span>
-
-                <h3>
-                    Temukan lebih banyak pilihan terbaik di Toko Tika
-                </h3>
-
-                <p>
-                    Jelajahi kategori produk lainnya dan lanjutkan belanja
-                    dengan pengalaman yang nyaman dan modern.
-                </p>
-
-                <div class="products-bottom-actions">
-                    <a href="{{ route('cart.index') }}" class="btn btn-light">
-                        Buka Keranjang
-                    </a>
-                </div>
-
-            </div>
-        </div>
-
-    </div>
 </section>
 
 @endsection

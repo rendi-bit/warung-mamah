@@ -9,10 +9,6 @@
                 <h1>Kelola Produk</h1>
                 <p>Atur produk, stok, harga, gambar, dan varian penjualan toko.</p>
             </div>
-
-            <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
-                + Tambah Produk
-            </a>
         </div>
 
         @if(session('success'))

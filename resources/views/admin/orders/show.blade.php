@@ -199,17 +199,29 @@
                                 {{-- ✅ Tombol Restok per item --}}
                                 <td>
                                     @if($item->is_waiting_restock)
+
+                                        @php
+                                            $message = "Restok {$item->waiting_restock_quantity} "
+                                                . ($item->product->stock_unit ?? "item")
+                                                . " untuk produk ini?";
+                                        @endphp
+
                                         <form
                                             action="{{ route('admin.orders.restockItem', [$order->id, $item->id]) }}"
                                             method="POST"
-                                            onsubmit="return confirm('Restok {{ $item->waiting_restock_quantity }} {{ $item->product->stock_unit ?? 'item' }} untuk produk ini?')"
+                                            onsubmit="return confirm('{{ $message }}')"
                                         >
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit" class="btn btn-primary" style="font-size:13px;padding:8px 14px;white-space:nowrap;">
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-primary"
+                                                style="font-size:13px;padding:8px 14px;white-space:nowrap;">
                                                 ✅ Restok
                                             </button>
                                         </form>
+
                                     @else
                                         <span style="color:#9ca3af;font-size:13px;">—</span>
                                     @endif

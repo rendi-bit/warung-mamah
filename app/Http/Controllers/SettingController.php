@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -33,7 +34,7 @@ class SettingController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $user = auth()->user();
+        $user = User::findOrFail(Auth::id());
 
         $request->validate([
             'name'    => 'required|string|max:255',
@@ -69,8 +70,8 @@ class SettingController extends Controller
     // ✅ FIX #2: Tambah method updatePassword yang sebelumnya tidak ada
     public function updatePassword(Request $request)
     {
-        $user = auth()->user();
-
+        $user = User::findOrFail(Auth::id());
+        
         $request->validate([
             'current_password'      => 'required|string',
             'password'              => 'required|string|min:8|confirmed',

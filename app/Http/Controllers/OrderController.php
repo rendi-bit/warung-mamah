@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -13,7 +14,7 @@ class OrderController extends Controller
     public function index()
     {
         // ✅ FIX #1: completed_at per-order = shipped_at + 3 hari, bukan now()
-        $shippedOrders = Order::where('user_id', auth()->id())
+        $shippedOrders = Order::where('user_id', Auth::id())
             ->where('order_status', 'shipped')
             ->whereNotNull('shipped_at')
             ->where('shipped_at', '<=', now()->subDays(3))
@@ -26,18 +27,18 @@ class OrderController extends Controller
             ]);
         }
 
-        $orders = Order::where('user_id', auth()->id())
+        $orders = Order::where('user_id', Auth::id())
             ->with(['items.product', 'items.variant'])
             ->latest()
             ->paginate(10);
 
-        $totalOrders = Order::where('user_id', auth()->id())->count();
+        $totalOrders = Order::where('user_id', Auth::id())->count();
 
-        $processingOrders = Order::where('user_id', auth()->id())
+        $processingOrders = Order::where('user_id', Auth::id())
             ->whereIn('order_status', ['pending', 'processing', 'shipped'])
             ->count();
 
-        $completedOrders = Order::where('user_id', auth()->id())
+        $completedOrders = Order::where('user_id', Auth::id())
             ->where('order_status', 'completed')
             ->count();
 
@@ -51,7 +52,7 @@ class OrderController extends Controller
 
     public function show($id)
     {
-        $order = Order::where('user_id', auth()->id())
+        $order = Order::where('user_id', Auth::id())
             ->with(['items.product', 'items.variant'])
             ->findOrFail($id);
 
@@ -60,7 +61,7 @@ class OrderController extends Controller
 
     public function complete(Order $order)
     {
-        if ($order->user_id !== auth()->id()) {
+        if ($order->user_id !== Auth::id()) {
             abort(403);
         }
 
@@ -80,7 +81,7 @@ class OrderController extends Controller
 
     public function cancel(Order $order)
     {
-        if ($order->user_id !== auth()->id()) {
+        if ($order->user_id !== Auth::id()) {
             abort(403);
         }
 
@@ -122,7 +123,7 @@ class OrderController extends Controller
 
     public function invoice(Order $order)
     {
-        if ($order->user_id !== auth()->id()) {
+        if ($order->user_id !== Auth::id()) {
             abort(403);
         }
 
@@ -133,7 +134,7 @@ class OrderController extends Controller
 
     public function uploadProof(Request $request, Order $order)
     {
-        if ($order->user_id !== auth()->id()) {
+        if ($order->user_id !== Auth::id()) {
             abort(403, 'Akses ditolak.');
         }
 

@@ -11,10 +11,6 @@
                 <h1>Dashboard Admin</h1>
                 <p>Pantau penjualan, pesanan, stok produk, dan aktivitas toko dalam satu halaman.</p>
             </div>
-            <div class="admin-hero-actions">
-                <a href="{{ route('admin.products.create') }}" class="btn btn-primary">+ Tambah Produk</a>
-                <a href="{{ route('admin.orders.index') }}" class="btn btn-light">Lihat Pesanan</a>
-            </div>
         </div>
 
         {{-- 4 KPI CARDS --}}

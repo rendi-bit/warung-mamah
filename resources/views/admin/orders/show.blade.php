@@ -22,6 +22,76 @@
             <div class="alert alert-info">{{ session('info') }}</div>
         @endif
 
+
+        {{-- Status Pesanan --}}
+        @if($order->order_status === 'cancelled')
+
+        <div class="order-status-box cancelled">
+            <div class="status-icon">✖</div>
+
+            <div>
+                <h3>Dibatalkan oleh Pelanggan</h3>
+                <p>
+                    Pesanan ini telah dibatalkan oleh pelanggan sehingga
+                    tidak dapat diproses ataupun dikirim.
+                </p>
+            </div>
+        </div>
+
+        @elseif($order->order_status === 'pending')
+
+        <div class="order-status-box pending">
+            <div class="status-icon">⏳</div>
+
+            <div>
+                <h3>Menunggu Konfirmasi</h3>
+                <p>
+                    Pesanan sedang menunggu konfirmasi dari admin.
+                </p>
+            </div>
+        </div>
+
+        @elseif($order->order_status === 'processed')
+
+        <div class="order-status-box processed">
+            <div class="status-icon">📦</div>
+
+            <div>
+                <h3>Sedang Diproses</h3>
+                <p>
+                    Pesanan sedang dipersiapkan oleh admin.
+                </p>
+            </div>
+        </div>
+
+        @elseif($order->order_status === 'shipped')
+
+        <div class="order-status-box shipped">
+            <div class="status-icon">🚚</div>
+
+            <div>
+                <h3>Sedang Dikirim</h3>
+                <p>
+                    Pesanan sedang dalam perjalanan menuju pelanggan.
+                </p>
+            </div>
+        </div>
+
+        @elseif($order->order_status === 'completed')
+
+        <div class="order-status-box completed">
+            <div class="status-icon">✔</div>
+
+            <div>
+                <h3>Pesanan Selesai</h3>
+                <p>
+                    Pesanan telah diterima pelanggan.
+                </p>
+            </div>
+        </div>
+
+        @endif
+
         <div class="checkout-grid">
 
             <div class="admin-action-card">
@@ -110,30 +180,54 @@
 
             <div class="admin-action-card">
                 <h3>Update Status</h3>
-                <form action="{{ route('admin.orders.update', $order->id) }}" method="POST" class="form-warung">
-                    @csrf
-                    @method('PUT')
 
-                    <label>Status Pembayaran</label>
-                    <select name="payment_status" required>
-                        <option value="pending" {{ $order->payment_status === 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="paid"    {{ $order->payment_status === 'paid'    ? 'selected' : '' }}>Paid</option>
-                        <option value="failed"  {{ $order->payment_status === 'failed'  ? 'selected' : '' }}>Failed</option>
-                    </select>
+                @if($order->order_status !== 'cancelled')
 
-                    <label>Status Pengiriman</label>
-                    @if($order->order_status === 'completed')
-                        <input type="hidden" name="order_status" value="completed">
-                        <div class="status-readonly-box">Pesanan sudah diselesaikan oleh user.</div>
-                    @else
-                        <select name="order_status" required>
-                            <option value="pending" {{ $order->order_status === 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="shipped" {{ $order->order_status === 'shipped' ? 'selected' : '' }}>Shipping</option>
+                    <form action="{{ route('admin.orders.update', $order->id) }}" method="POST" class="form-warung">
+                        @csrf
+                        @method('PUT')
+
+                        <label>Status Pembayaran</label>
+                        <select name="payment_status" required>
+                            <option value="pending" {{ $order->payment_status === 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="paid" {{ $order->payment_status === 'paid' ? 'selected' : '' }}>Paid</option>
+                            <option value="failed" {{ $order->payment_status === 'failed' ? 'selected' : '' }}>Failed</option>
                         </select>
-                    @endif
 
-                    <button type="submit" class="btn-warung">Simpan Status</button>
-                </form>
+                        <label>Status Pengiriman</label>
+
+                        @if($order->order_status === 'completed')
+                            <input type="hidden" name="order_status" value="completed">
+                            <div class="status-readonly-box">
+                                Pesanan sudah diselesaikan oleh user.
+                            </div>
+                        @else
+                            <select name="order_status" required>
+                                <option value="pending" {{ $order->order_status === 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="shipped" {{ $order->order_status === 'shipped' ? 'selected' : '' }}>Shipping</option>
+                            </select>
+                        @endif
+
+                        <button type="submit" class="btn-warung">
+                            Simpan Status
+                        </button>
+
+                    </form>
+
+                @else
+
+                    <div class="order-status-box cancelled" style="margin-top:15px;">
+                        <div class="status-icon">✖</div>
+
+                        <div>
+                            <h3>Pesanan Sudah Dibatalkan</h3>
+                            <p>
+                                Pesanan ini telah dibatalkan oleh pelanggan sehingga
+                                status tidak dapat diubah lagi.
+                            </p>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
 

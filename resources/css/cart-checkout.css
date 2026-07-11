@@ -929,7 +929,7 @@
     padding-right: 24px !important;
 }
 
-.checkout-field-main::after {
+.checkout-field-main:has(select)::after {
     content: "\f078";
     font-family: "Font Awesome 5 Free";
     font-weight: 900;
@@ -997,6 +997,7 @@
 
 .delivery-option-card {
     display: flex;
+    justify-content: flex-start;
     gap: 12px;
     padding: 14px 18px;
     border: 1.5px solid var(--border);
@@ -2216,6 +2217,7 @@
 
 .payment-method-card {
     display: flex;
+    justify-content: flex-start;
     gap: 12px;
     align-items: flex-start;
     padding: 16px;
@@ -2226,7 +2228,12 @@
     transition: all 0.25s ease;
 }
 
-.payment-method-card input { display: none; }
+.payment-method-card input
+    { display: none; }
+
+.option-radio-circle{
+    display:none;
+}
 
 .payment-method-card.active,
 .payment-method-card:hover {

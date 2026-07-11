@@ -1141,3 +1141,83 @@
     background: #ede9fe;
     color: #5b21b6;
 }
+
+
+
+
+.order-status-box{
+    display:flex;
+    align-items:center;
+    gap:20px;
+    padding:22px;
+    border-radius:18px;
+    margin-bottom:25px;
+    border-left:7px solid;
+}
+
+.order-status-box h3{
+    margin:0 0 6px;
+    font-size:22px;
+    font-weight:700;
+}
+
+.order-status-box p{
+    margin:0;
+    color:#555;
+}
+
+.status-icon{
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:28px;
+    flex-shrink:0;
+}
+
+.order-status-box.cancelled{
+    background:#fff1f2;
+    border-color:#dc2626;
+}
+
+.order-status-box.cancelled .status-icon{
+    background:#fecaca;
+}
+
+.order-status-box.pending{
+    background:#fff7e6;
+    border-color:#d97706;
+}
+
+.order-status-box.pending .status-icon{
+    background:#fde68a;
+}
+
+.order-status-box.processed{
+    background:#eff6ff;
+    border-color:#2563eb;
+}
+
+.order-status-box.processed .status-icon{
+    background:#bfdbfe;
+}
+
+.order-status-box.shipped{
+    background:#eef8ff;
+    border-color:#0ea5e9;
+}
+
+.order-status-box.shipped .status-icon{
+    background:#bae6fd;
+}
+
+.order-status-box.completed{
+    background:#ecfdf5;
+    border-color:#16a34a;
+}
+
+.order-status-box.completed .status-icon{
+    background:#bbf7d0;
+}

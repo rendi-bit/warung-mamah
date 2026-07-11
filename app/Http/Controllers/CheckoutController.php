@@ -46,12 +46,25 @@ class CheckoutController extends Controller
      */
     private function reduceStock(Product $product, $item): void
     {
-        if ($item->is_waiting_restock) {
-            // Stok boleh minus — kurangi penuh sesuai qty dipesan
-            $product->decrement('stock_quantity', $item->quantity);
+        if ($item->variant) {
+
+            $weightInKg = $item->variant->weight / 1000;
+
+            $stockToReduce = $weightInKg * $item->quantity;
+
         } else {
-            // Stok normal — kurangi sebatas stok yang ada
-            $stockToReduce = min($item->quantity, $product->stock_quantity);
+
+            $stockToReduce = $item->quantity;
+        }
+
+        if ($item->is_waiting_restock) {
+
+            $product->decrement('stock_quantity', $stockToReduce);
+
+        } else {
+
+            $stockToReduce = min($stockToReduce, $product->stock_quantity);
+
             if ($stockToReduce > 0) {
                 $product->decrement('stock_quantity', $stockToReduce);
             }

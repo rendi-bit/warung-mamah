@@ -47,10 +47,6 @@
                         <span class="meta-label">Kategori</span>
                         <strong>{{ $product->category->category_name ?? '-' }}</strong>
                     </div>
-                    <div class="detail-meta-item">
-                        <span class="meta-label">Kondisi</span>
-                        <strong>Baru</strong>
-                    </div>
                 </div>
 
                 @auth
@@ -67,7 +63,7 @@
                             <div class="qty-box">
                                 <label for="variant_id">Pilih Berat</label>
                                 <select name="variant_id" id="variant_id" required>
-                                    <option value="">-- Pilih Varian --</option>
+                                    <option value="">-- Pilih Berat --</option>
                                     @foreach($product->variants as $variant)
                                         <option value="{{ $variant->id }}" data-price="{{ $variant->price }}">
                                             {{ $variant->variant_name }} - Rp {{ number_format($variant->price, 0, ',', '.') }}

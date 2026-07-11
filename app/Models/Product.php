@@ -54,14 +54,19 @@ class Product extends Model
     }
 
     /**
-     * ✅ FIX: Stok untuk tampilan USER
+     * FIX: Stok untuk tampilan USER
      * Kalau stok minus → tampilkan 0 (user tidak perlu tahu stok negatif)
      * Kalau stok normal → tampilkan apa adanya
      */
     public function getStockLabelAttribute()
     {
         $qty = max(0, $this->stock_quantity);
-        return $qty . ' ' . $this->stock_unit;
+
+        if ($this->variants()->exists()) {
+            return number_format($qty, 2, '.', '') . ' ' . $this->stock_unit;
+        }
+
+        return intval($qty) . ' ' . $this->stock_unit;
     }
 
     /**

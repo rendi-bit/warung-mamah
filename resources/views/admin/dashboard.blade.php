@@ -51,8 +51,7 @@
                     <div>
                         <h3>Pesanan Terbaru</h3>
                         <p>Order terbaru yang masuk ke sistem.</p>
-                    </div>
-                    <a href="{{ route('admin.orders.index') }}">Lihat semua</a>
+                    </div> 
                 </div>
                 <div class="admin-mini-list">
                     @forelse($latestOrders as $order)

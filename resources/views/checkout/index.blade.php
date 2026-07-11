@@ -158,7 +158,6 @@
                                         id="checkout_notes"
                                         placeholder="Contoh: tolong antar sore, hubungi dulu sebelum sampai"
                                     >{{ old('notes', $lastOrder->notes ?? '') }}</textarea>
-                                    <span class="checkout-char-counter" id="char_counter">0 / 200</span>
                                 </div>
                             </div>
 
@@ -181,7 +180,6 @@
                             <!-- Ojek Toko Option -->
                             <label class="delivery-option-card active" id="delivery_ojek_label" data-cost="{{ $ojekCost }}">
                                 <input type="radio" name="delivery_method" value="ojek_toko" data-cost="{{ $ojekCost }}" checked>
-                                <span class="option-radio-circle"></span>
                                 <div class="delivery-icon">
                                     <i class="fas fa-motorcycle"></i>
                                 </div>
@@ -198,7 +196,6 @@
                             <!-- Ambil di Toko Option -->
                             <label class="delivery-option-card" id="delivery_pickup_label" data-cost="{{ $pickupCost }}">
                                 <input type="radio" name="delivery_method" value="ambil_di_toko" data-cost="{{ $pickupCost }}">
-                                <span class="option-radio-circle"></span>
                                 <div class="delivery-icon">
                                     <i class="fas fa-store"></i>
                                 </div>
@@ -230,7 +227,6 @@
                             <!-- QRIS Option -->
                             <label class="payment-method-card active" id="payment_qris_label">
                                 <input type="radio" name="payment_method" value="qris" checked>
-                                <span class="option-radio-circle"></span>
                                 <div class="payment-method-icon">
                                     <i class="fas fa-qrcode"></i>
                                 </div>
@@ -243,7 +239,6 @@
                             <!-- COD Option -->
                             <label class="payment-method-card" id="payment_cod_label">
                                 <input type="radio" name="payment_method" value="cod">
-                                <span class="option-radio-circle"></span>
                                 <div class="payment-method-icon">
                                     <i class="fas fa-money-bill-wave"></i>
                                 </div>

@@ -8,10 +8,7 @@
             <div>
                 <span class="products-hero-badge">Katalog Produk</span>
                 <h1>Temukan Produk Terbaik dari Toko Tika</h1>
-                <p>
-                    Jelajahi berbagai produk UMKM pilihan dengan kualitas terbaik,
-                    harga terjangkau, dan pengalaman belanja yang nyaman.
-                </p>
+                <p>Jelajahi berbagai produk UMKM pilihan dengan kualitas terbaik, harga terjangkau, dan pengalaman belanja yang nyaman.</p>
             </div>
         </div>
     </div>
@@ -51,9 +48,7 @@
                         Terapkan Filter
                     </button>
 
-                    <a href="{{ route('products.index') }}" class="btn btn-light">
-                        Reset
-                    </a>
+                    <a href="{{ route('products.index') }}" class="btn btn-light">Reset</a>
                 </div>
             </form>
         </div>

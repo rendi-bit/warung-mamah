@@ -192,10 +192,13 @@ class OrderController extends Controller
 
         $order->update([
             'payment_proof' => $path,
-            'order_status'  => 'waiting_confirmation',
+            'payment_status' => 'pending',
+            'order_status' => 'waiting_confirmation',
+            'need_reupload' => false,
+            'reupload_note' => null,
         ]);
 
-        return redirect()->route('checkout.payment', $order->id)
+        return redirect()->route('orders.invoice', $order->id)
             ->with('success', 'Bukti pembayaran berhasil diupload! Admin akan segera memverifikasi.');
     }
 }

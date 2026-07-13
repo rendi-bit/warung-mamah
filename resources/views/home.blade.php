@@ -27,9 +27,6 @@
                     Belanja Sekarang
                 </a>
 
-                <a href="{{ route('products.index') }}" class="btn btn-light">
-                    Lihat Produk
-                </a>
             </div>
         </div>
 

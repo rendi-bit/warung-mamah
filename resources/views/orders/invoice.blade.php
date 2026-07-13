@@ -49,6 +49,59 @@
                 </div>
             </div>
 
+            @if($order->need_reupload)
+                <div class="invoice-reupload-note">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>Perlu Upload Ulang Bukti Bayar</strong>
+                        <p>{{ $order->reupload_note ?? 'Bukti pembayaran kamu kurang jelas. Silakan upload ulang bukti pembayaran.' }}</p>
+                    </div>
+                </div>
+
+                <div class="invoice-reupload-form">
+                    <h3>Upload Bukti Pembayaran Baru</h3>
+
+                    <form action="{{ route('orders.upload-proof', $order->id) }}"
+                          method="POST"
+                          enctype="multipart/form-data"
+                          id="reuploadForm">
+                        @csrf
+                        @method('PATCH')
+
+                        <label class="invoice-upload-box" for="payment_proof">
+                            <input type="file"
+                                   name="payment_proof"
+                                   id="payment_proof"
+                                   accept="image/jpeg,image/jpg,image/png"
+                                   required
+                                   onchange="document.getElementById('proofFilename').textContent = this.files[0]?.name || ''; document.getElementById('proofFilename').classList.toggle('show', !!this.files[0]);">
+                            <div class="invoice-upload-icon">
+                                <i class="fas fa-cloud-arrow-up"></i>
+                            </div>
+                            <h4>Klik atau seret file di sini</h4>
+                            <p>JPG, JPEG, atau PNG — maksimal 2MB</p>
+                        </label>
+
+                        <div id="proofFilename" class="invoice-upload-filename"></div>
+
+                        @error('payment_proof')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+
+                        <button type="submit" class="btn btn-primary">
+                            Kirim Bukti Pembayaran
+                        </button>
+                    </form>
+                </div>
+            @elseif($order->payment_method === 'qris' && $order->payment_proof)
+                <div class="invoice-proof-box">
+                    <span>Bukti Pembayaran</span>
+                    <a href="{{ asset('storage/' . $order->payment_proof) }}" target="_blank">
+                        <img src="{{ asset('storage/' . $order->payment_proof) }}" alt="Bukti Pembayaran">
+                    </a>
+                </div>
+            @endif
+
             @if($order->order_status === 'cancelled')
                 <div class="invoice-cancel-note">
                     <strong>Pesanan Dibatalkan</strong>

@@ -343,4 +343,13 @@ class CheckoutController extends Controller
         return redirect()->route('orders.index')
             ->with('success', 'Pesanan berhasil dibuat dan menunggu konfirmasi admin.');
     }
+
+    public function payment(Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        return redirect()->route('orders.invoice', $order->id);
+    }
 }

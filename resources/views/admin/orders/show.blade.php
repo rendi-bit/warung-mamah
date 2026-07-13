@@ -159,25 +159,51 @@
             </div>
 
             @if($order->payment_proof)
-                <div class="admin-action-card">
-                    <h3>Bukti Pembayaran</h3>
-                    <div style="margin-top:16px;">
-                        <img
-                            src="{{ asset('storage/' . $order->payment_proof) }}"
-                            alt="Bukti Pembayaran"
-                            style="width:100%;max-width:400px;border-radius:12px;border:1px solid #ddd;"
-                        >
-                    </div>
-                    @if($order->payment_status !== 'paid')
-                        <form action="{{ route('admin.orders.confirm-payment', $order->id) }}" method="POST" style="margin-top:20px;">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="btn btn-primary">Konfirmasi Pembayaran</button>
-                        </form>
-                    @endif
-                </div>
-            @endif
 
+            <div class="admin-action-card">
+
+                <h3>Bukti Pembayaran</h3>
+
+                <div style="margin-top:16px;">
+                    <img
+                        src="{{ asset('storage/' . $order->payment_proof) }}"
+                        alt="Bukti Pembayaran"
+                        style="width:100%;max-width:400px;border-radius:12px;border:1px solid #ddd;"
+                    >
+                </div>
+
+                @if($order->payment_status !== 'paid')
+
+                <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
+
+                    <form action="{{ route('admin.orders.confirm-payment', $order->id) }}" method="POST">
+                        @csrf
+                        @method('PATCH')
+
+                        <button type="submit" class="btn btn-primary">
+                            ✔ Konfirmasi Pembayaran
+                        </button>
+                    </form>
+
+                    <form action="{{ route('admin.orders.request-reupload', $order->id) }}" method="POST">
+                        @csrf
+                        @method('PATCH')
+
+                        <button
+                            type="submit"
+                            class="btn btn-light"
+                            onclick="return confirm('Minta pelanggan upload ulang bukti pembayaran?')">
+                            📷 Foto Kurang Jelas
+                        </button>
+                    </form>
+
+                </div>
+
+                @endif
+
+            </div>
+
+            @endif
             <div class="admin-action-card">
                 <h3>Update Status</h3>
 

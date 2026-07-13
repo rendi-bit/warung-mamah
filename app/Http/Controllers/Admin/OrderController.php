@@ -11,20 +11,17 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $orders = Order::with([
-            'user',
-            'shippingArea'
-        ])
-        ->where('order_status', '!=', 'waiting_payment')
-        ->latest()
-        ->paginate(15);
+        $orders = Order::with(['user', 'shippingArea'])
+            ->where('order_status', '!=', 'waiting_payment')
+            ->latest()
+            ->paginate(15);
 
         return view('admin.orders.index', compact('orders'));
     }
 
     public function show(Order $order)
     {
-        $order->load(['user','shippingArea','items.product','items.variant']);
+        $order->load(['user', 'shippingArea', 'items.product', 'items.variant']);
 
         return view('admin.orders.show', compact('order'));
     }
@@ -86,11 +83,36 @@ class OrderController extends Controller
             'payment_status'       => 'paid',
             'order_status'         => 'processed',
             'payment_confirmed_at' => now(),
+            'need_reupload'        => false,
+            'reupload_note'        => null,
         ]);
 
         return redirect()
             ->route('admin.orders.show', $order->id)
             ->with('success', 'Pembayaran berhasil dikonfirmasi.');
+    }
+
+    /**
+     * ✅ FIX: Hapus dd() — tambahkan redirect yang benar
+     * Admin minta user upload ulang bukti bayar
+     */
+    public function requestReupload(Request $request, Order $order)
+    {
+        $note = $request->input(
+            'reupload_note',
+            'Foto bukti pembayaran kurang jelas. Silakan upload ulang.'
+        );
+
+        $order->update([
+            'need_reupload'  => true,
+            'reupload_note'  => $note,
+            'payment_status' => 'pending',
+            'order_status'   => 'waiting_confirmation',
+        ]);
+
+        return redirect()
+            ->route('admin.orders.show', $order->id)
+            ->with('success', 'Permintaan upload ulang berhasil dikirim ke pelanggan.');
     }
 
     public function fulfillRestock(Order $order)
@@ -120,13 +142,8 @@ class OrderController extends Controller
             ->with('success', 'Semua restok terpenuhi. Pesanan sekarang bisa diproses ke Shipping.');
     }
 
-    /**
-     * ✅ NEW: Restok per item langsung dari tabel pesanan
-     * Admin klik tombol "Restok" di baris item → stok produk bertambah
-     */
     public function restockItem(Order $order, OrderItem $item)
     {
-        // Pastikan item milik order ini
         if ($item->order_id !== $order->id) {
             abort(403, 'Akses ditolak.');
         }
@@ -137,7 +154,8 @@ class OrderController extends Controller
                 ->with('info', 'Item ini sudah tidak menunggu restok.');
         }
 
-        $product = $item->product;
+        $product    = $item->product;
+        $restockQty = $item->waiting_restock_quantity ?? 0;
 
         if (!$product) {
             return redirect()
@@ -145,20 +163,15 @@ class OrderController extends Controller
                 ->with('error', 'Produk tidak ditemukan.');
         }
 
-        // Tambah stok sebesar waiting_restock_quantity
-        $restockQty = $item->waiting_restock_quantity ?? 0;
-
         if ($restockQty > 0) {
             $product->increment('stock_quantity', $restockQty);
         }
 
-        // Update item — tandai sudah direstok
         $item->update([
             'is_waiting_restock'       => false,
             'waiting_restock_quantity' => 0,
         ]);
 
-        // Cek apakah masih ada item lain yang waiting restock
         $stillWaiting = $order->items()
             ->where('is_waiting_restock', true)
             ->exists();
@@ -172,6 +185,6 @@ class OrderController extends Controller
 
         return redirect()
             ->route('admin.orders.show', $order->id)
-            ->with('success', 'Stok produk "' . $product->name . '" berhasil direstok sebanyak ' . $restockQty . ' ' . ($product->stock_unit ?? 'item') . '.');
+            ->with('success', 'Stok "' . $product->name . '" berhasil direstok ' . $restockQty . ' ' . ($product->stock_unit ?? 'item') . '.');
     }
 }

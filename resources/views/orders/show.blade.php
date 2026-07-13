@@ -1,6 +1,7 @@
 @extends('layouts.store')
 
 @section('content')
+
 @php
     $statusClass = match (strtolower($order->order_status)) {
         'completed' => 'status-success',

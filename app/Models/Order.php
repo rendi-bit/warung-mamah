@@ -29,6 +29,8 @@ class Order extends Model
         'payment_confirmed_at',
         'shipped_at',
         'completed_at',
+        'need_reupload',
+        'reupload_note',
     ];
 
     protected $casts = [
@@ -36,6 +38,7 @@ class Order extends Model
         'completed_at'         => 'datetime',
         'has_waiting_restock'  => 'boolean',
         'payment_confirmed_at' => 'datetime',
+        'need_reupload' => 'boolean',
     ];
 
     // ─────────────────────────────────────────

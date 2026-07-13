@@ -68,6 +68,12 @@
                                             Restok
                                         </span>
                                     @endif
+
+                                    @if($order->need_reupload)
+                                        <span class="admin-badge red" style="margin-top:6px; display:inline-flex;">
+                                            <i class="fas fa-triangle-exclamation"></i>&nbsp;Upload Ulang
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td>
@@ -161,18 +167,22 @@
                                 <td>
                                     @php
                                         $shippingLabel = match($order->order_status) {
-                                            'pending'   => 'Pending',
-                                            'shipped'   => 'Shipping',
-                                            'completed' => 'Selesai',
-                                            'cancelled' => 'Dibatalkan',
-                                            default     => ucfirst($order->order_status),
+                                            'pending'              => 'Pending',
+                                            'waiting_confirmation' => 'Menunggu Konfirmasi',
+                                            'processed'            => 'Diproses',
+                                            'shipped'              => 'Shipping',
+                                            'completed'            => 'Selesai',
+                                            'cancelled'            => 'Dibatalkan',
+                                            default                => ucfirst($order->order_status),
                                         };
 
                                         $shippingClass = match($order->order_status) {
-                                            'completed' => 'green',
-                                            'shipped'   => 'blue',
-                                            'cancelled' => 'red',
-                                            default     => 'yellow',
+                                            'completed'            => 'green',
+                                            'shipped'              => 'blue',
+                                            'processed'            => 'blue',
+                                            'waiting_confirmation' => 'orange',
+                                            'cancelled'            => 'red',
+                                            default                => 'yellow',
                                         };
                                     @endphp
 
@@ -183,6 +193,17 @@
                                     @if($order->has_waiting_restock)
                                         <div class="order-status-help">
                                             Ada produk yang sedang menunggu restok.
+                                        </div>
+                                    @endif
+
+                                    @if($order->need_reupload)
+                                        <div class="order-restock-note">
+                                            <i class="fas fa-triangle-exclamation"></i>
+
+                                            <div>
+                                                <strong>Perlu Upload Ulang Bukti Bayar</strong>
+                                                <p>{{ $order->reupload_note ?? 'Bukti pembayaran kurang jelas, silakan upload ulang.' }}</p>
+                                            </div>
                                         </div>
                                     @endif
                                 </td>
@@ -217,6 +238,11 @@
                                                     Hubungi admin untuk proses refund QRIS.
                                                 </small>
                                             @endif
+
+                                        @elseif($order->order_status === 'waiting_confirmation')
+                                            <span class="admin-badge yellow">
+                                                Menunggu Verifikasi Admin
+                                            </span>
 
                                         @else
                                             @if($order->created_at->gte(now()->subDay()))

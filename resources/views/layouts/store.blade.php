@@ -289,10 +289,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         <div class="container footer-bottom">
             <p>© 2026 TOKO TIKA. All rights reserved.</p>
-            <div class="footer-bottom-links">
-                <a href="{{ route('pages.privacy') }}">Privasi</a>
-                <a href="{{ route('pages.terms') }}">Ketentuan</a>
-            </div>
         </div>
     </footer>
     @endif

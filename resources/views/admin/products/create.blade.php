@@ -90,7 +90,7 @@
                     <h3>Varian Produk</h3>
 
                     <p class="text-muted">
-                        Tambahkan ukuran atau berat produk beserta harganya.
+                        Tambahkan ukuran atau berat produk beserta harga dan stoknya.
                     </p>
 
                     <div id="variant-wrapper">
@@ -98,12 +98,26 @@
                             <input
                                 type="text"
                                 name="variants[0][variant_name]"
-                                placeholder="Ukuran / Berat">
+                                placeholder="Ukuran / Berat (contoh: 500ml)">
 
                             <input
                                 type="number"
                                 name="variants[0][price]"
                                 placeholder="Harga">
+
+                            <input
+                                type="number"
+                                name="variants[0][weight]"
+                                placeholder="Berat (gram)"
+                                min="0"
+                                step="1">
+
+                            <input
+                                type="number"
+                                name="variants[0][stock]"
+                                placeholder="Stok"
+                                min="0"
+                                step="1">
                         </div>
                     </div>
 
@@ -138,12 +152,26 @@
                     <input
                         type="text"
                         name="variants[${variantIndex}][variant_name]"
-                        placeholder="Ukuran / Berat">
+                        placeholder="Ukuran / Berat (contoh: 500ml)">
 
                     <input
                         type="number"
                         name="variants[${variantIndex}][price]"
                         placeholder="Harga">
+
+                    <input
+                        type="number"
+                        name="variants[${variantIndex}][weight]"
+                        placeholder="Berat (gram)"
+                        min="0"
+                        step="1">
+
+                    <input
+                        type="number"
+                        name="variants[${variantIndex}][stock]"
+                        placeholder="Stok"
+                        min="0"
+                        step="1">
                 `;
 
                 wrapper.appendChild(row);

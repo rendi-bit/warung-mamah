@@ -94,11 +94,17 @@
                                                     <span>Varian: {{ $item->variant->variant_name }}</span>
                                                 @endif
 
-                                                <span>
-                                                    Jumlah:
-                                                    {{ $item->quantity }}
-                                                    {{ $item->product->stock_unit ?? 'item' }}
-                                                </span>
+                                                @if($item->variant)
+                                                    <span>
+                                                        Jumlah: {{ $item->quantity }}
+                                                    </span>
+                                                @else
+                                                    <span>
+                                                        Jumlah:
+                                                        {{ $item->quantity }}
+                                                        {{ $item->product->stock_unit ?? 'item' }}
+                                                    </span>
+                                                @endif
 
                                                 <span>Harga: Rp {{ number_format($item->price, 0, ',', '.') }}</span>
                                                 <span>Subtotal: Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>

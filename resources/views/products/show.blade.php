@@ -41,6 +41,7 @@
                 <div class="detail-meta-box">
                     <div class="detail-meta-item">
                         <span class="meta-label">Stok</span>
+                        {{-- ✅ FIX: id ditambahkan supaya JS bisa update teks stok sesuai varian yang dipilih --}}
                         <strong id="stock-display">{{ $product->stock_label }}</strong>
                     </div>
                     <div class="detail-meta-item">
@@ -62,10 +63,15 @@
                         @if($product->variants->count())
                             <div class="qty-box">
                                 <label for="variant_id">Pilih Berat</label>
+                                {{-- ✅ FIX: data-stock ditambahkan di tiap option, supaya JS tahu stok PER VARIAN --}}
                                 <select name="variant_id" id="variant_id" required>
                                     <option value="">-- Pilih Berat --</option>
                                     @foreach($product->variants as $variant)
-                                        <option value="{{ $variant->id }}" data-price="{{ $variant->price }}">
+                                        <option
+                                            value="{{ $variant->id }}"
+                                            data-price="{{ $variant->price }}"
+                                            data-stock="{{ $variant->stock }}"
+                                        >
                                             {{ $variant->variant_name }} - Rp {{ number_format($variant->price, 0, ',', '.') }}
                                         </option>
                                     @endforeach
@@ -230,7 +236,7 @@
         <h3>Stok Belum Mencukupi</h3>
         <p>
             Maaf, stok <strong>{{ $product->name }}</strong> saat ini hanya
-            <strong>{{ $product->stock_quantity }} {{ $product->stock_unit }}</strong>.
+            <strong id="modalStockText">{{ $product->stock_quantity }} {{ $product->stock_unit }}</strong>.
         </p>
         <p>
             Produk sedang dalam proses restok dan diperkirakan tersedia dalam
@@ -238,7 +244,7 @@
         </p>
         <div class="stock-warning-actions">
             <button type="button" class="btn btn-light" id="reduceToStockBtn">
-                Kurangi ke {{ $product->stock_quantity }} {{ $product->stock_unit }}
+                Kurangi ke stok tersedia
             </button>
             <button type="button" class="btn btn-primary" id="waitRestockBtn">
                 Tetap Pesan & Tunggu Restok
@@ -251,6 +257,38 @@
 document.addEventListener('DOMContentLoaded', function () {
     const variantSelect = document.getElementById('variant_id');
     const priceElement  = document.getElementById('product-price');
+    const stockDisplay  = document.getElementById('stock-display');
+    const modalStockText = document.getElementById('modalStockText');
+
+    // ✅ FIX: stok produk utama dipakai HANYA sebagai fallback untuk produk TANPA varian
+    const productStock = Number("{{ $product->stock_quantity }}");
+    const productUnit  = "{{ $product->stock_unit }}";
+
+    // ✅ FIX: availableStock sekarang dinamis, mengikuti varian yang dipilih
+    let availableStock = productStock;
+
+    function updateAvailableStock() {
+        if (variantSelect && variantSelect.value) {
+            const selectedOption = variantSelect.options[variantSelect.selectedIndex];
+            availableStock = Number(selectedOption.getAttribute('data-stock')) || 0;
+
+            if (stockDisplay) {
+                stockDisplay.innerText = availableStock + ' pcs';
+            }
+            if (modalStockText) {
+                modalStockText.innerText = availableStock + ' pcs';
+            }
+        } else {
+            availableStock = productStock;
+
+            if (stockDisplay) {
+                stockDisplay.innerText = "{{ $product->stock_label }}";
+            }
+            if (modalStockText) {
+                modalStockText.innerText = productStock + ' ' + productUnit;
+            }
+        }
+    }
 
     if (variantSelect && priceElement) {
         variantSelect.addEventListener('change', function () {
@@ -258,7 +296,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (price) {
                 priceElement.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(price);
             }
+            updateAvailableStock();
         });
+
+        // Set nilai awal saat halaman dimuat
+        updateAvailableStock();
     }
 
     const qtyInput = document.getElementById('quantity');
@@ -282,12 +324,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const reduceToStockBtn    = document.getElementById('reduceToStockBtn');
     const waitRestockBtn      = document.getElementById('waitRestockBtn');
     const allowWaitingRestock = document.getElementById('allow_waiting_restock');
-    const availableStock = Number("{{ $product->stock_quantity }}");
     let pendingSubmitter      = null;
 
     if (detailCartForm && qtyInput && stockWarningModal) {
         detailCartForm.addEventListener('submit', function (event) {
             const requestedQty = parseInt(qtyInput.value) || 1;
+
+            // ✅ FIX: cek terhadap availableStock (dinamis, sesuai varian dipilih)
             if (requestedQty > availableStock && allowWaitingRestock?.value !== '1') {
                 event.preventDefault();
                 pendingSubmitter = event.submitter;

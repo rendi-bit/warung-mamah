@@ -134,18 +134,23 @@
 
                 <div class="admin-variant-box">
                     <h3>Varian Produk</h3>
-                    <p class="text-muted">Edit ukuran / berat produk di bawah ini.</p>
+                    <p class="text-muted">Edit ukuran / berat / stok produk di bawah ini. Berat wajib diisi (dalam gram) agar pengurangan stok akurat saat ada transaksi.</p>
 
                     <div id="variant-wrapper" data-count="{{ $product->variants->count() }}">
                         @forelse($product->variants as $index => $variant)
                             <div class="variant-row">
+                                <input type="hidden" name="variants[{{ $index }}][id]" value="{{ $variant->id }}">
                                 <input type="text" name="variants[{{ $index }}][variant_name]" value="{{ $variant->variant_name }}" placeholder="Contoh: 250 Gram">
                                 <input type="number" name="variants[{{ $index }}][price]" value="{{ $variant->price }}" placeholder="Harga">
+                                <input type="number" name="variants[{{ $index }}][weight]" value="{{ $variant->weight }}" placeholder="Berat (gram)" min="0" step="1">
+                                <input type="number" name="variants[{{ $index }}][stock]" value="{{ $variant->stock }}" placeholder="Stok" min="0" step="1">
                             </div>
                         @empty
                             <div class="variant-row">
                                 <input type="text" name="variants[0][variant_name]" placeholder="Contoh: 250 Gram">
                                 <input type="number" name="variants[0][price]" placeholder="Harga">
+                                <input type="number" name="variants[0][weight]" placeholder="Berat (gram)" min="0" step="1">
+                                <input type="number" name="variants[0][stock]" placeholder="Stok" min="0" step="1">
                             </div>
                         @endforelse
                     </div>
@@ -174,9 +179,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const row = document.createElement('div');
             row.classList.add('variant-row');
 
+            // Row baru tidak diberi field [id] -> controller akan menganggapnya varian baru
             row.innerHTML = `
                 <input type="text" name="variants[${variantIndex}][variant_name]" placeholder="Contoh: 500 Gram">
                 <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga">
+                <input type="number" name="variants[${variantIndex}][weight]" placeholder="Berat (gram)" min="0" step="1">
+                <input type="number" name="variants[${variantIndex}][stock]" placeholder="Stok" min="0" step="1">
             `;
 
             wrapper.appendChild(row);

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 class CartController extends Controller
 {
     /**
-     * Pesan error stok yang informatif.
+     * Pesan error stok yang informatif — untuk produk TANPA varian.
      */
     private function stockErrorMessage(Product $product): string
     {
@@ -23,24 +23,66 @@ class CartController extends Controller
     }
 
     /**
-     * Validasi variant milik produk yang dimaksud.
+     * ✅ FIX: Pesan error stok khusus untuk produk DENGAN varian.
      */
-    private function validateVariant(Product $product, $variantId): void
+    private function variantStockErrorMessage(Product $product, ProductVariant $variant): string
     {
-        if ($variantId) {
-            ProductVariant::where('product_id', $product->id)
-                ->where('id', $variantId)
-                ->firstOrFail();
-        }
+        return 'Maaf, stok ' . $product->name . ' (' . $variant->variant_name . ') saat ini belum mencukupi. ' .
+            'Stok tersedia hanya ' . $variant->stock . '. ' .
+            'Diperkirakan restok dalam ' . ($product->restock_estimation ?? '1-2 hari') . '. ' .
+            'Silakan kurangi jumlah atau pilih "Tunggu Restok".';
     }
 
     /**
-     * Hitung status restock berdasarkan stok FRESH dari DB.
-     * ✅ FIX: Gunakan fresh() agar stok selalu akurat, tidak dari cache objek.
+     * Validasi variant milik produk yang dimaksud, dan kembalikan modelnya.
      */
-    private function calculateRestockStatus(Product $product, int $totalRequestedQty, bool $allowWaitingRestock): array
+    private function validateVariant(Product $product, $variantId): ?ProductVariant
     {
-        // Ambil stok terbaru langsung dari DB
+        if ($variantId) {
+            return ProductVariant::where('product_id', $product->id)
+                ->where('id', $variantId)
+                ->firstOrFail();
+        }
+
+        return null;
+    }
+
+    /**
+     * ✅ FIX: Hitung status restock berdasarkan stok FRESH dari DB.
+     * - Kalau ada $variant → cek stok VARIAN (product_variants.stock), bukan stok produk utama.
+     * - Kalau tidak ada $variant → cek stok produk utama (products.stock_quantity), perilaku lama.
+     */
+    private function calculateRestockStatus(
+        Product $product,
+        int $totalRequestedQty,
+        bool $allowWaitingRestock,
+        ?ProductVariant $variant = null
+    ): array {
+        if ($variant) {
+            // Ambil stok varian terbaru langsung dari DB
+            $freshStock = $variant->fresh()->stock;
+
+            if ($totalRequestedQty <= $freshStock) {
+                return [
+                    'is_waiting_restock'       => false,
+                    'waiting_restock_quantity' => 0,
+                ];
+            }
+
+            if (!$allowWaitingRestock) {
+                return [
+                    'error'   => true,
+                    'message' => $this->variantStockErrorMessage($product, $variant),
+                ];
+            }
+
+            return [
+                'is_waiting_restock'       => true,
+                'waiting_restock_quantity' => $totalRequestedQty - $freshStock,
+            ];
+        }
+
+        // Produk tanpa varian (perilaku lama, tidak berubah)
         $freshStock = $product->fresh()->stock_quantity;
 
         if ($totalRequestedQty <= $freshStock) {
@@ -83,10 +125,11 @@ class CartController extends Controller
     /**
      * ✅ FIX: Logika add ke keranjang di-extract ke satu method.
      * Dipakai oleh add() dan buyNow() agar tidak duplikat.
+     * Sekarang variant-aware: status restock dihitung dari stok varian kalau ada.
      */
     private function addToCart(Product $product, int $qty, $variantId, bool $allowWaitingRestock): CartItem
     {
-        $this->validateVariant($product, $variantId);
+        $variant = $this->validateVariant($product, $variantId);
 
         $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
 
@@ -98,7 +141,7 @@ class CartController extends Controller
         $currentQty        = $item ? $item->quantity : 0;
         $totalRequestedQty = $currentQty + $qty;
 
-        $restockStatus = $this->calculateRestockStatus($product, $totalRequestedQty, $allowWaitingRestock);
+        $restockStatus = $this->calculateRestockStatus($product, $totalRequestedQty, $allowWaitingRestock, $variant);
 
         if (isset($restockStatus['error'])) {
             throw new \Exception($restockStatus['message']);
@@ -169,7 +212,7 @@ class CartController extends Controller
             'allow_waiting_restock' => 'nullable|boolean',
         ]);
 
-        $item = CartItem::with('product')->findOrFail($id);
+        $item = CartItem::with(['product', 'variant'])->findOrFail($id);
 
         // ✅ Pastikan item milik cart user yang login
         $cart = Cart::where('user_id', Auth::id())->firstOrFail();
@@ -180,7 +223,8 @@ class CartController extends Controller
         $restockStatus = $this->calculateRestockStatus(
             $item->product,
             (int) $request->quantity,
-            $request->boolean('allow_waiting_restock')
+            $request->boolean('allow_waiting_restock'),
+            $item->variant
         );
 
         if (isset($restockStatus['error'])) {

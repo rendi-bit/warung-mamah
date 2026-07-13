@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\OrderItem;
 use App\Models\ShippingArea;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -40,22 +41,95 @@ class CheckoutController extends Controller
     }
 
     /**
+     * ✅ FIX: Pesan error khusus untuk stok VARIAN yang tidak mencukupi.
+     */
+    private function variantStockErrorMessage($product, $variant): string
+    {
+        return 'Maaf, stok ' . $product->name . ' (' . $variant->variant_name . ') saat ini tidak mencukupi. ' .
+            'Stok tersedia: ' . $variant->stock . '. ' .
+            'Diperkirakan restok dalam ' . ($product->restock_estimation ?? '1-2 hari') . '.';
+    }
+
+    /**
+     * ✅ Helper: Hitung kebutuhan stok (dalam satuan stock_quantity) untuk sebuah item.
+     * HANYA dipakai untuk produk TANPA varian (produk berbasis stock_quantity/berat).
+     * - Jika item punya varian dengan berat (gram) → dikonversi ke kg, dikali quantity.
+     * - Jika item tanpa varian → kebutuhan stok = quantity apa adanya.
+     */
+    private function requiredStock($item): float
+    {
+        if ($item->variant && $item->variant->weight) {
+            $weightInKg = $item->variant->weight / 1000;
+            return $weightInKg * $item->quantity;
+        }
+
+        return (float) $item->quantity;
+    }
+
+    /**
+     * ✅ FIX: Validasi stok untuk 1 item cart/order.
+     * - Item punya variant_id → cek stok di ProductVariant (bukan stock_quantity produk utama).
+     * - Item tanpa variant_id → cek stok di Product::stock_quantity (perilaku lama, tidak berubah).
+     * Melempar \Exception kalau stok tidak cukup dan item tidak sedang waiting_restock.
+     */
+    private function assertStockAvailable($product, $item): void
+    {
+        if ($item->variant_id) {
+            $variant = $item->variant ?: ProductVariant::find($item->variant_id);
+
+            if (!$variant) {
+                throw new \Exception('Varian produk tidak ditemukan.');
+            }
+
+            if (!$item->is_waiting_restock && $item->quantity > $variant->stock) {
+                throw new \Exception($this->variantStockErrorMessage($product, $variant));
+            }
+
+            return;
+        }
+
+        $requiredStock = $this->requiredStock($item);
+
+        if (!$item->is_waiting_restock && $requiredStock > $product->stock_quantity) {
+            throw new \Exception($this->stockErrorMessage($product));
+        }
+    }
+
+    /**
      * ✅ Helper: Kurangi stok produk
      * - is_waiting_restock = true  → stok boleh minus (kurangi penuh)
-     * - is_waiting_restock = false → stok dikurangi normal (tidak minus)
+     * - is_waiting_restock = false → stok dikurangi normal (TIDAK BOLEH minus)
      */
     private function reduceStock(Product $product, $item): void
     {
-        if ($item->variant) {
+        // Jika produk memakai varian, kurangi stok varian
+        if ($item->variant_id) {
 
-            $weightInKg = $item->variant->weight / 1000;
+            $variant = ProductVariant::where('id', $item->variant_id)
+                ->lockForUpdate()
+                ->first();
 
-            $stockToReduce = $weightInKg * $item->quantity;
+            if (!$variant) {
+                return;
+            }
 
-        } else {
+            if ($item->is_waiting_restock) {
+                // Boleh minus, kurangi penuh sesuai quantity
+                $variant->decrement('stock', $item->quantity);
+            } else {
+                // ✅ FIX: Jangan sampai minus. Kurangi maksimal sebanyak stok yang tersedia.
+                $qtyToReduce = min($item->quantity, $variant->stock);
 
-            $stockToReduce = $item->quantity;
+                if ($qtyToReduce > 0) {
+                    $variant->decrement('stock', $qtyToReduce);
+                }
+            }
+
+            return;
         }
+
+        // Produk tanpa varian (kode lama tetap)
+        $stockToReduce = $this->requiredStock($item);
 
         if ($item->is_waiting_restock) {
 
@@ -90,9 +164,12 @@ class CheckoutController extends Controller
                     ->with('error', 'Ada produk yang tidak ditemukan. Silakan perbarui keranjang Anda.');
             }
 
-            if (!$item->is_waiting_restock && $item->quantity > $product->stock_quantity) {
+            // ✅ FIX: Validasi stok varian ATAU stok produk, tergantung jenis item
+            try {
+                $this->assertStockAvailable($product, $item);
+            } catch (\Exception $e) {
                 return redirect()->route('cart.index')
-                    ->with('error', $this->stockErrorMessage($product));
+                    ->with('error', $e->getMessage());
             }
         }
 
@@ -179,11 +256,9 @@ class CheckoutController extends Controller
                             throw new \Exception('Produk tidak ditemukan.');
                         }
 
-                        if (!$item->is_waiting_restock && $item->quantity > $product->stock_quantity) {
-                            throw new \Exception($this->stockErrorMessage($product));
-                        }
+                        // ✅ FIX: Validasi stok varian ATAU stok produk, tergantung jenis item
+                        $this->assertStockAvailable($product, $item);
 
-                        // ✅ FIX: Gunakan helper reduceStock
                         $this->reduceStock($product, $item);
                     }
 
@@ -290,11 +365,9 @@ class CheckoutController extends Controller
                         throw new \Exception('Produk tidak ditemukan.');
                     }
 
-                    if (!$item->is_waiting_restock && $item->quantity > $product->stock_quantity) {
-                        throw new \Exception($this->stockErrorMessage($product));
-                    }
+                    // ✅ FIX: Validasi stok varian ATAU stok produk, tergantung jenis item
+                    $this->assertStockAvailable($product, $item);
 
-                    // ✅ FIX: Gunakan helper reduceStock
                     $this->reduceStock($product, $item);
                 }
 
@@ -327,6 +400,8 @@ class CheckoutController extends Controller
                         'quantity'   => $item->quantity,
                         'price'      => $price,
                         'subtotal'   => $price * $item->quantity,
+                        'is_waiting_restock'       => $item->is_waiting_restock,
+                        'waiting_restock_quantity' => $item->waiting_restock_quantity ?? 0,
                     ]);
                 }
 

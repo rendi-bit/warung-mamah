@@ -43,6 +43,8 @@ class ProductController extends Controller
 
             'variants.*.variant_name' => 'nullable|string|max:255',
             'variants.*.price' => 'nullable|numeric',
+            'variants.*.weight' => 'nullable|numeric|min:0',
+            'variants.*.stock' => 'nullable|integer|min:0',
         ]);
 
         $imagePath = null;
@@ -83,7 +85,8 @@ class ProductController extends Controller
                         'product_id' => $product->id,
                         'variant_name' => $variant['variant_name'],
                         'price' => $variant['price'],
-                        'stock' => 0,
+                        'weight' => $variant['weight'] ?? 0,
+                        'stock' => $variant['stock'] ?? 0,
                     ]);
                 }
             }
@@ -115,8 +118,11 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
 
+            'variants.*.id' => 'nullable|integer|exists:product_variants,id',
             'variants.*.variant_name' => 'nullable|string|max:255',
             'variants.*.price' => 'nullable|numeric',
+            'variants.*.weight' => 'nullable|numeric|min:0',
+            'variants.*.stock' => 'nullable|integer|min:0',
         ]);
 
         $imagePath = $product->image;
@@ -148,20 +154,36 @@ class ProductController extends Controller
             'image' => $imagePath,
         ]);
 
-        $product->variants()->delete();
+        // ✅ FIX: Sinkronisasi varian berbasis id (bukan delete-lalu-create-ulang).
+        // Ini menjaga:
+        // - id varian lama tetap sama (supaya relasi order_items.variant_id tidak rusak)
+        // - stok varian yang sudah berjalan tidak ke-reset ke 0 setiap kali produk diedit
+        $submittedIds = [];
 
         if ($request->has('variants')) {
             foreach ($request->variants as $variant) {
                 if (!empty($variant['variant_name']) && !empty($variant['price'])) {
-                    ProductVariant::create([
-                        'product_id' => $product->id,
-                        'variant_name' => $variant['variant_name'],
-                        'price' => $variant['price'],
-                        'stock' => 0,
-                    ]);
+
+                    $variantModel = ProductVariant::updateOrCreate(
+                        [
+                            'id' => $variant['id'] ?? null,
+                            'product_id' => $product->id,
+                        ],
+                        [
+                            'variant_name' => $variant['variant_name'],
+                            'price' => $variant['price'],
+                            'weight' => $variant['weight'] ?? 0,
+                            'stock' => $variant['stock'] ?? 0,
+                        ]
+                    );
+
+                    $submittedIds[] = $variantModel->id;
                 }
             }
         }
+
+        // Hapus varian yang memang sudah dihapus admin dari form (tidak ada lagi di submittedIds)
+        $product->variants()->whereNotIn('id', $submittedIds)->delete();
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');
     }

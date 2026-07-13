@@ -78,7 +78,6 @@
                 <div class="admin-empty-icon">🏷️</div>
                 <h3>Belum ada kategori</h3>
                 <p>Buat kategori pertama agar produk lebih mudah dikelompokkan.</p>
-                <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">Tambah Kategori</a>
             </div>
         @endif
 

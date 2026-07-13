@@ -30,6 +30,10 @@
                             $price = $item->variant ? $item->variant->price : $item->product->price;
                             $subtotal = $price * $item->quantity;
                             $grandTotal += $subtotal;
+
+                            // ✅ FIX: stok tersedia diambil dari VARIAN kalau ada, kalau tidak dari produk utama
+                            $availableStock = $item->variant ? $item->variant->stock : $item->product->stock_quantity;
+                            $stockUnitLabel = $item->product->stock_unit ?? 'pcs';
                         @endphp
 
                         <div class="cart-modern-item">
@@ -81,11 +85,11 @@
                                             <strong>Pesanan melebihi stok tersedia</strong>
                                             <p>
                                                 Stok tersedia saat ini:
-                                                {{ $item->product->stock_quantity }} {{ $item->product->stock_unit }}.
+                                                {{ $availableStock }} {{ $stockUnitLabel }}.
                                                 Jumlah dipesan:
-                                                {{ $item->quantity }} {{ $item->product->stock_unit }}.
+                                                {{ $item->quantity }} {{ $stockUnitLabel }}.
                                                 Menunggu restok:
-                                                {{ $item->waiting_restock_quantity }} {{ $item->product->stock_unit }}.
+                                                {{ $item->waiting_restock_quantity }} {{ $stockUnitLabel }}.
                                             </p>
                                             <small>
                                                 Estimasi restok:
@@ -105,12 +109,30 @@
                                         <span>Subtotal</span>
                                         <strong>Rp {{ number_format($subtotal, 0, ',', '.') }}</strong>
                                     </div>
+
+                                    <div>
+                                        <span>Stok Tersedia</span>
+                                        <strong>{{ $availableStock }} {{ $stockUnitLabel }}</strong>
+                                    </div>
                                 </div>
 
                                 <div class="cart-product-footer">
-                                    <form action="{{ route('cart.update', $item->id) }}" method="POST" class="cart-qty-modern-form">
+                                    <form
+                                        action="{{ route('cart.update', $item->id) }}"
+                                        method="POST"
+                                        class="cart-qty-modern-form"
+                                        data-available-stock="{{ $availableStock }}"
+                                    >
                                         @csrf
-                                        <input type="hidden" name="allow_waiting_restock" value="{{ $item->is_waiting_restock ? 1 : 0 }}">
+
+                                        {{-- ✅ FIX: sekarang checkbox, bukan hidden statis.
+                                             User bisa aktif/nonaktifkan "tunggu restok" langsung dari cart. --}}
+                                        <input
+                                            type="hidden"
+                                            name="allow_waiting_restock"
+                                            class="cart-allow-restock-input"
+                                            value="{{ $item->is_waiting_restock ? 1 : 0 }}"
+                                        >
 
                                         <div class="cart-quantity-control">
                                             <button type="button" class="cart-qty-btn cart-minus">−</button>
@@ -126,6 +148,12 @@
 
                                             <button type="button" class="cart-qty-btn cart-plus">+</button>
                                         </div>
+
+                                        {{-- ✅ FIX: checkbox tampil otomatis lewat JS kalau quantity > stok tersedia --}}
+                                        <label class="cart-restock-checkbox" style="display:none;">
+                                            <input type="checkbox" class="cart-restock-checkbox-input">
+                                            Tunggu restok untuk kekurangan stok
+                                        </label>
 
                                         <button type="submit" class="cart-update-btn">
                                             Update
@@ -188,11 +216,34 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.cart-qty-modern-form').forEach(function (form) {
-        const input = form.querySelector('.cart-qty-input');
-        const minusBtn = form.querySelector('.cart-minus');
-        const plusBtn = form.querySelector('.cart-plus');
+        const input          = form.querySelector('.cart-qty-input');
+        const minusBtn        = form.querySelector('.cart-minus');
+        const plusBtn          = form.querySelector('.cart-plus');
+        const restockLabel    = form.querySelector('.cart-restock-checkbox');
+        const restockCheckbox = form.querySelector('.cart-restock-checkbox-input');
+        const allowInput       = form.querySelector('.cart-allow-restock-input');
+        const availableStock  = Number(form.dataset.availableStock) || 0;
 
         if (!input || !minusBtn || !plusBtn) return;
+
+        // ✅ FIX: tampilkan/sembunyikan checkbox "tunggu restok" tergantung quantity vs stok
+        function refreshRestockUI() {
+            const qty = parseInt(input.value) || 1;
+
+            if (qty > availableStock) {
+                if (restockLabel) restockLabel.style.display = 'flex';
+            } else {
+                if (restockLabel) restockLabel.style.display = 'none';
+                if (restockCheckbox) restockCheckbox.checked = false;
+                if (allowInput) allowInput.value = '0';
+            }
+        }
+
+        if (restockCheckbox && allowInput) {
+            restockCheckbox.addEventListener('change', function () {
+                allowInput.value = restockCheckbox.checked ? '1' : '0';
+            });
+        }
 
         minusBtn.addEventListener('click', function () {
             let currentValue = parseInt(input.value) || 1;
@@ -201,12 +252,26 @@ document.addEventListener('DOMContentLoaded', function () {
             if (currentValue > minValue) {
                 input.value = currentValue - 1;
             }
+            refreshRestockUI();
         });
 
         plusBtn.addEventListener('click', function () {
             let currentValue = parseInt(input.value) || 1;
             input.value = currentValue + 1;
+            refreshRestockUI();
         });
+
+        // ✅ FIX: sebelum submit, kalau qty melebihi stok tapi checkbox belum dicentang -> cegah & minta centang dulu
+        form.addEventListener('submit', function (event) {
+            const qty = parseInt(input.value) || 1;
+
+            if (qty > availableStock && (!restockCheckbox || !restockCheckbox.checked)) {
+                event.preventDefault();
+                alert('Jumlah melebihi stok tersedia (' + availableStock + '). Centang "Tunggu restok" untuk tetap memesan, atau kurangi jumlahnya.');
+            }
+        });
+
+        refreshRestockUI();
     });
 });
 </script>

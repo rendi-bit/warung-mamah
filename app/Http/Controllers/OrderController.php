@@ -98,13 +98,24 @@ class OrderController extends Controller
         // ✅ FIX #2: Jika QRIS sudah paid, informasikan refund sebelum cancel
         // (Di sini kita tetap izinkan cancel tapi catat flagnya)
         DB::transaction(function () use ($order) {
-            $order->load(['items.product']);
+            // ✅ FIX: load juga relasi variant, bukan cuma product
+            $order->load(['items.product', 'items.variant']);
 
             foreach ($order->items as $item) {
                 if (!$item->product) continue;
 
                 $stockToReturn = $item->quantity - ($item->waiting_restock_quantity ?? 0);
-                if ($stockToReturn > 0) {
+
+                if ($stockToReturn <= 0) {
+                    continue;
+                }
+
+                // ✅ FIX: Kembalikan stok ke VARIAN kalau item ini punya variant_id,
+                // jangan selalu ke product->stock_quantity (yang tidak relevan untuk produk bervarian).
+                if ($item->variant_id && $item->variant) {
+                    $item->variant->lockForUpdate();
+                    $item->variant->increment('stock', $stockToReturn);
+                } else {
                     $item->product->increment('stock_quantity', $stockToReturn);
                 }
             }

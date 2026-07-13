@@ -35,101 +35,72 @@ class CheckoutController extends Controller
 
     private function stockErrorMessage($product): string
     {
+        $stock = $product->variants()->exists()
+            ? ($product->base_stock / 1000)
+            : $product->stock_quantity;
+
         return 'Maaf, stok ' . $product->name . ' saat ini tidak mencukupi. ' .
-            'Stok tersedia: ' . $product->stock_quantity . ' ' . ($product->stock_unit ?? 'pcs') . '. ' .
+            'Stok tersedia: ' . rtrim(rtrim(number_format($stock, 2, '.', ''), '0'), '.') . ' ' .
+            ($product->stock_unit ?? 'pcs') . '. ' .
             'Diperkirakan restok dalam ' . ($product->restock_estimation ?? '1-2 hari') . '.';
     }
 
-    /**
-     * ✅ FIX: Pesan error khusus untuk stok VARIAN yang tidak mencukupi.
-     */
-    private function variantStockErrorMessage($product, $variant): string
-    {
-        return 'Maaf, stok ' . $product->name . ' (' . $variant->variant_name . ') saat ini tidak mencukupi. ' .
-            'Stok tersedia: ' . $variant->stock . '. ' .
-            'Diperkirakan restok dalam ' . ($product->restock_estimation ?? '1-2 hari') . '.';
-    }
-
-    /**
-     * ✅ Helper: Hitung kebutuhan stok (dalam satuan stock_quantity) untuk sebuah item.
-     * HANYA dipakai untuk produk TANPA varian (produk berbasis stock_quantity/berat).
-     * - Jika item punya varian dengan berat (gram) → dikonversi ke kg, dikali quantity.
-     * - Jika item tanpa varian → kebutuhan stok = quantity apa adanya.
-     */
     private function requiredStock($item): float
     {
         if ($item->variant && $item->variant->weight) {
-            $weightInKg = $item->variant->weight / 1000;
-            return $weightInKg * $item->quantity;
+            return (float) $item->variant->weight * $item->quantity;
+        }
+
+        if ($item->product->stock_unit === 'kg') {
+            return (float) $item->quantity * 1000;
         }
 
         return (float) $item->quantity;
     }
 
-    /**
-     * ✅ FIX: Validasi stok untuk 1 item cart/order.
-     * - Item punya variant_id → cek stok di ProductVariant (bukan stock_quantity produk utama).
-     * - Item tanpa variant_id → cek stok di Product::stock_quantity (perilaku lama, tidak berubah).
-     * Melempar \Exception kalau stok tidak cukup dan item tidak sedang waiting_restock.
-     */
     private function assertStockAvailable($product, $item): void
     {
-        if ($item->variant_id) {
-            $variant = $item->variant ?: ProductVariant::find($item->variant_id);
-
-            if (!$variant) {
-                throw new \Exception('Varian produk tidak ditemukan.');
-            }
-
-            if (!$item->is_waiting_restock && $item->quantity > $variant->stock) {
-                throw new \Exception($this->variantStockErrorMessage($product, $variant));
-            }
-
-            return;
-        }
-
         $requiredStock = $this->requiredStock($item);
 
-        if (!$item->is_waiting_restock && $requiredStock > $product->stock_quantity) {
+        if (!$item->is_waiting_restock && $requiredStock > $product->base_stock) {
             throw new \Exception($this->stockErrorMessage($product));
         }
     }
 
-    /**
-     * ✅ Helper: Kurangi stok produk
-     * - is_waiting_restock = true  → stok boleh minus (kurangi penuh)
-     * - is_waiting_restock = false → stok dikurangi normal (TIDAK BOLEH minus)
-     */
     private function reduceStock(Product $product, $item): void
     {
-        // Jika produk memakai varian, kurangi stok varian
-        if ($item->variant_id) {
+        // ============================
+        // PRODUK DENGAN VARIAN
+        // ============================
+        if ($item->variant) {
 
-            $variant = ProductVariant::where('id', $item->variant_id)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$variant) {
-                return;
-            }
+            $stockToReduce = $this->requiredStock($item);
 
             if ($item->is_waiting_restock) {
-                // Boleh minus, kurangi penuh sesuai quantity
-                $variant->decrement('stock', $item->quantity);
-            } else {
-                // ✅ FIX: Jangan sampai minus. Kurangi maksimal sebanyak stok yang tersedia.
-                $qtyToReduce = min($item->quantity, $variant->stock);
 
-                if ($qtyToReduce > 0) {
-                    $variant->decrement('stock', $qtyToReduce);
+                $product->decrement('base_stock', $stockToReduce);
+
+            } else {
+
+                $stockToReduce = min($stockToReduce, $product->base_stock);
+
+                if ($stockToReduce > 0) {
+                    $product->decrement('base_stock', $stockToReduce);
                 }
             }
+
+            // Sinkronkan tampilan stok (kg)
+            $product->update([
+                'stock_quantity' => $product->fresh()->base_stock / 1000
+            ]);
 
             return;
         }
 
-        // Produk tanpa varian (kode lama tetap)
-        $stockToReduce = $this->requiredStock($item);
+        // ============================
+        // PRODUK TANPA VARIAN
+        // ============================
+        $stockToReduce = $item->quantity;
 
         if ($item->is_waiting_restock) {
 
@@ -164,7 +135,6 @@ class CheckoutController extends Controller
                     ->with('error', 'Ada produk yang tidak ditemukan. Silakan perbarui keranjang Anda.');
             }
 
-            // ✅ FIX: Validasi stok varian ATAU stok produk, tergantung jenis item
             try {
                 $this->assertStockAvailable($product, $item);
             } catch (\Exception $e) {
@@ -256,7 +226,6 @@ class CheckoutController extends Controller
                             throw new \Exception('Produk tidak ditemukan.');
                         }
 
-                        // ✅ FIX: Validasi stok varian ATAU stok produk, tergantung jenis item
                         $this->assertStockAvailable($product, $item);
 
                         $this->reduceStock($product, $item);
@@ -365,7 +334,6 @@ class CheckoutController extends Controller
                         throw new \Exception('Produk tidak ditemukan.');
                     }
 
-                    // ✅ FIX: Validasi stok varian ATAU stok produk, tergantung jenis item
                     $this->assertStockAvailable($product, $item);
 
                     $this->reduceStock($product, $item);

@@ -20,7 +20,11 @@
 
                 <div class="stock-system-box">
                     <h3>Pengaturan Stok</h3>
-                    <p class="text-muted">Pilih cara input stok agar tidak membingungkan antara stok satuan dan stok dus.</p>
+                    <p class="text-muted">
+                        Jika produk ini punya varian berat (kg/gram), isi <strong>Jenis Satuan = Kg atau Gram</strong>
+                        dan <strong>Total Stok Satuan</strong> di bawah sebagai stok fisik bersama semua varian.
+                        Stok tiap varian akan dihitung otomatis berdasarkan berat masing-masing.
+                    </p>
 
                     <label>Mode Stok</label>
                     <select name="stock_mode" id="stock_mode" required>
@@ -42,7 +46,7 @@
 
                     <div id="stock_satuan_box">
                         <label>Total Stok Satuan</label>
-                        <input type="number" name="stock_quantity" id="stock_quantity" min="0" placeholder="Contoh: 20">
+                        <input type="number" name="stock_quantity" id="stock_quantity" min="0" placeholder="Contoh: 20 (atau 10 jika satuan Kg)">
 
                         <div class="stock-preview-box">
                             Total stok: <strong id="satuan_preview">0 pcs</strong>
@@ -90,7 +94,9 @@
                     <h3>Varian Produk</h3>
 
                     <p class="text-muted">
-                        Tambahkan ukuran atau berat produk beserta harga dan stoknya.
+                        Tambahkan ukuran atau berat produk beserta harganya.
+                        <strong>Stok tidak diisi manual di sini</strong> — dihitung otomatis dari
+                        Total Stok Satuan di atas berdasarkan berat (gram) tiap varian.
                     </p>
 
                     <div id="variant-wrapper">
@@ -98,7 +104,7 @@
                             <input
                                 type="text"
                                 name="variants[0][variant_name]"
-                                placeholder="Ukuran / Berat (contoh: 500ml)">
+                                placeholder="Ukuran / Berat (contoh: 1kg)">
 
                             <input
                                 type="number"
@@ -108,14 +114,7 @@
                             <input
                                 type="number"
                                 name="variants[0][weight]"
-                                placeholder="Berat (gram)"
-                                min="0"
-                                step="1">
-
-                            <input
-                                type="number"
-                                name="variants[0][stock]"
-                                placeholder="Stok"
+                                placeholder="Berat (gram), contoh: 1000"
                                 min="0"
                                 step="1">
                         </div>
@@ -152,7 +151,7 @@
                     <input
                         type="text"
                         name="variants[${variantIndex}][variant_name]"
-                        placeholder="Ukuran / Berat (contoh: 500ml)">
+                        placeholder="Ukuran / Berat (contoh: 1kg)">
 
                     <input
                         type="number"
@@ -162,14 +161,7 @@
                     <input
                         type="number"
                         name="variants[${variantIndex}][weight]"
-                        placeholder="Berat (gram)"
-                        min="0"
-                        step="1">
-
-                    <input
-                        type="number"
-                        name="variants[${variantIndex}][stock]"
-                        placeholder="Stok"
+                        placeholder="Berat (gram), contoh: 1000"
                         min="0"
                         step="1">
                 `;

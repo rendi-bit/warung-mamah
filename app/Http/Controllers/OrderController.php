@@ -13,7 +13,6 @@ class OrderController extends Controller
 {
     public function index()
     {
-        // ✅ FIX #1: completed_at per-order = shipped_at + 3 hari, bukan now()
         $shippedOrders = Order::where('user_id', Auth::id())
             ->where('order_status', 'shipped')
             ->whereNotNull('shipped_at')
@@ -95,10 +94,7 @@ class OrderController extends Controller
                 ->with('error', 'Pesanan sudah melewati batas waktu pembatalan (1x24 jam).');
         }
 
-        // ✅ FIX #2: Jika QRIS sudah paid, informasikan refund sebelum cancel
-        // (Di sini kita tetap izinkan cancel tapi catat flagnya)
         DB::transaction(function () use ($order) {
-            // ✅ FIX: load juga relasi variant, bukan cuma product
             $order->load(['items.product', 'items.variant']);
 
             foreach ($order->items as $item) {
@@ -110,14 +106,11 @@ class OrderController extends Controller
                     continue;
                 }
 
-                // ✅ FIX: Kembalikan stok ke VARIAN kalau item ini punya variant_id,
-                // jangan selalu ke product->stock_quantity (yang tidak relevan untuk produk bervarian).
-                if ($item->variant_id && $item->variant) {
-                    $item->variant->lockForUpdate();
-                    $item->variant->increment('stock', $stockToReturn);
-                } else {
-                    $item->product->increment('stock_quantity', $stockToReturn);
-                }
+                // ✅ FIX FINAL: Keduanya mengembalikan ke stock_quantity produk utama
+                // Tidak perlu lagi memisahkan rumus base_stock gram perkalian berat.
+                $product = $item->product;
+                $product->lockForUpdate();
+                $product->increment('stock_quantity', $stockToReturn);
             }
 
             $order->update(['order_status' => 'cancelled']);
@@ -149,7 +142,6 @@ class OrderController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        // ✅ FIX #3: Guard status — hanya order QRIS pending yang boleh upload
         if ($order->payment_method !== 'qris') {
             return redirect()->route('orders.show', $order->id)
                 ->with('error', 'Hanya pesanan QRIS yang memerlukan bukti pembayaran.');
@@ -181,7 +173,6 @@ class OrderController extends Controller
             'payment_proof.max'      => 'Ukuran gambar maksimal 2MB.',
         ]);
 
-        // Hapus bukti lama jika ada
         if ($order->payment_proof && Storage::disk('public')->exists($order->payment_proof)) {
             Storage::disk('public')->delete($order->payment_proof);
         }

@@ -26,6 +26,15 @@ class ProductController extends Controller
         return view('admin.products.create', compact('categories'));
     }
 
+    private function convertToGram(float $qty, string $unit): float
+    {
+        return match ($unit) {
+            'kg'    => $qty * 1000,
+            'gram'  => $qty,
+            default => $qty,
+        };
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -44,7 +53,6 @@ class ProductController extends Controller
             'variants.*.variant_name' => 'nullable|string|max:255',
             'variants.*.price' => 'nullable|numeric',
             'variants.*.weight' => 'nullable|numeric|min:0',
-            'variants.*.stock' => 'nullable|integer|min:0',
         ]);
 
         $imagePath = null;
@@ -61,12 +69,21 @@ class ProductController extends Controller
             $stockQuantity = (int) $request->stock_quantity;
         }
 
+        $hasVariants = $request->has('variants') && collect($request->variants)
+            ->contains(fn ($v) => !empty($v['variant_name']) && !empty($v['price']));
+
+        $baseStock = $this->convertToGram(
+            (float) $stockQuantity,
+            $request->stock_unit
+        );
+
         $product = Product::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name) . '-' . Str::random(5),
             'description' => $request->description,
             'price' => $request->price,
             'stock_quantity' => $stockQuantity,
+            'base_stock' => $baseStock,
             'stock_unit' => $request->stock_unit,
             'stock_mode' => $request->stock_mode,
             'unit_per_box' => $request->stock_mode === 'dus' ? $request->unit_per_box : null,
@@ -76,9 +93,10 @@ class ProductController extends Controller
             'user_id' => Auth::id(),
             'image' => $imagePath,
             'status' => 'active',
+
         ]);
 
-        if ($request->has('variants')) {
+        if ($hasVariants) {
             foreach ($request->variants as $variant) {
                 if (!empty($variant['variant_name']) && !empty($variant['price'])) {
                     ProductVariant::create([
@@ -86,7 +104,7 @@ class ProductController extends Controller
                         'variant_name' => $variant['variant_name'],
                         'price' => $variant['price'],
                         'weight' => $variant['weight'] ?? 0,
-                        'stock' => $variant['stock'] ?? 0,
+                        // stock TIDAK diisi lagi — otomatis dihitung dari base_stock
                     ]);
                 }
             }
@@ -122,7 +140,6 @@ class ProductController extends Controller
             'variants.*.variant_name' => 'nullable|string|max:255',
             'variants.*.price' => 'nullable|numeric',
             'variants.*.weight' => 'nullable|numeric|min:0',
-            'variants.*.stock' => 'nullable|integer|min:0',
         ]);
 
         $imagePath = $product->image;
@@ -139,12 +156,21 @@ class ProductController extends Controller
             $stockQuantity = (int) $request->stock_quantity;
         }
 
+        $hasVariants = $request->has('variants') && collect($request->variants)
+            ->contains(fn ($v) => !empty($v['variant_name']) && !empty($v['price']));
+        
+        $baseStock = $this->convertToGram(
+            (float) $stockQuantity,
+            $request->stock_unit
+        );
+
         $product->update([
             'name' => $request->name,
             'slug' => Str::slug($request->name) . '-' . $product->id,
             'description' => $request->description,
             'price' => $request->price,
             'stock_quantity' => $stockQuantity,
+            'base_stock' => $baseStock,
             'stock_unit' => $request->stock_unit,
             'stock_mode' => $request->stock_mode,
             'unit_per_box' => $request->stock_mode === 'dus' ? $request->unit_per_box : null,
@@ -154,13 +180,9 @@ class ProductController extends Controller
             'image' => $imagePath,
         ]);
 
-        // ✅ FIX: Sinkronisasi varian berbasis id (bukan delete-lalu-create-ulang).
-        // Ini menjaga:
-        // - id varian lama tetap sama (supaya relasi order_items.variant_id tidak rusak)
-        // - stok varian yang sudah berjalan tidak ke-reset ke 0 setiap kali produk diedit
         $submittedIds = [];
 
-        if ($request->has('variants')) {
+        if ($hasVariants) {
             foreach ($request->variants as $variant) {
                 if (!empty($variant['variant_name']) && !empty($variant['price'])) {
 
@@ -173,7 +195,7 @@ class ProductController extends Controller
                             'variant_name' => $variant['variant_name'],
                             'price' => $variant['price'],
                             'weight' => $variant['weight'] ?? 0,
-                            'stock' => $variant['stock'] ?? 0,
+                            // stock TIDAK di-update lagi manual
                         ]
                     );
 
@@ -182,7 +204,6 @@ class ProductController extends Controller
             }
         }
 
-        // Hapus varian yang memang sudah dihapus admin dari form (tidak ada lagi di submittedIds)
         $product->variants()->whereNotIn('id', $submittedIds)->delete();
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');

@@ -9,18 +9,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            if (!Schema::hasColumn('products', 'stock_unit')) {
-                $table->string('stock_unit')->default('pcs')->after('stock_quantity');
-            }
+            // Stok fisik total dalam GRAM, dipakai kalau produk punya varian berat.
+            $table->decimal('base_stock', 12, 2)->default(0)->after('stock_quantity');
         });
     }
 
     public function down(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            if (Schema::hasColumn('products', 'stock_unit')) {
-                $table->dropColumn('stock_unit');
-            }
+            $table->dropColumn('base_stock');
         });
     }
 };

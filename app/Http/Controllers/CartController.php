@@ -17,18 +17,20 @@ class CartController extends Controller
     private function stockErrorMessage(Product $product): string
     {
         return 'Maaf, stok ' . $product->name . ' saat ini belum mencukupi. ' .
-            'Stok tersedia hanya ' . $product->stock_quantity . ' ' . ($product->stock_unit ?? 'pcs') . '. ' .
+            'Stok tersedia hanya ' . $product->stock_quantity . ' ' . ($product->stock_unit ?? 'kg') . '. ' .
             'Diperkirakan restok dalam ' . ($product->restock_estimation ?? '1-2 hari') . '. ' .
             'Silakan kurangi jumlah atau pilih "Tunggu Restok".';
     }
 
     /**
      * ✅ FIX: Pesan error stok khusus untuk produk DENGAN varian.
+     * Menampilkan total sisa stok induk produk asli agar tetap sinkron.
      */
     private function variantStockErrorMessage(Product $product, ProductVariant $variant): string
     {
+        $freshProduct = $product->fresh();
         return 'Maaf, stok ' . $product->name . ' (' . $variant->variant_name . ') saat ini belum mencukupi. ' .
-            'Stok tersedia hanya ' . $variant->stock . '. ' .
+            'Stok tersedia hanya ' . $freshProduct->stock_quantity . ' ' . ($freshProduct->stock_unit ?? 'kg') . '. ' .
             'Diperkirakan restok dalam ' . ($product->restock_estimation ?? '1-2 hari') . '. ' .
             'Silakan kurangi jumlah atau pilih "Tunggu Restok".';
     }
@@ -48,9 +50,8 @@ class CartController extends Controller
     }
 
     /**
-     * ✅ FIX: Hitung status restock berdasarkan stok FRESH dari DB.
-     * - Kalau ada $variant → cek stok VARIAN (product_variants.stock), bukan stok produk utama.
-     * - Kalau tidak ada $variant → cek stok produk utama (products.stock_quantity), perilaku lama.
+     * ✅ FIX FINAL: Hitung status restock berdasarkan STOK UTAMA produk induk.
+     * Baik produk memiliki varian maupun tidak, semuanya mengacu pada kantong stok yang sama: products.stock_quantity.
      */
     private function calculateRestockStatus(
         Product $product,
@@ -58,33 +59,10 @@ class CartController extends Controller
         bool $allowWaitingRestock,
         ?ProductVariant $variant = null
     ): array {
-        if ($variant) {
-            // Ambil stok varian terbaru langsung dari DB
-            $freshStock = $variant->fresh()->stock;
-
-            if ($totalRequestedQty <= $freshStock) {
-                return [
-                    'is_waiting_restock'       => false,
-                    'waiting_restock_quantity' => 0,
-                ];
-            }
-
-            if (!$allowWaitingRestock) {
-                return [
-                    'error'   => true,
-                    'message' => $this->variantStockErrorMessage($product, $variant),
-                ];
-            }
-
-            return [
-                'is_waiting_restock'       => true,
-                'waiting_restock_quantity' => $totalRequestedQty - $freshStock,
-            ];
-        }
-
-        // Produk tanpa varian (perilaku lama, tidak berubah)
+        // Ambil data stok ter-fresh dari database milik produk utama
         $freshStock = $product->fresh()->stock_quantity;
 
+        // Cek apakah stok utama mencukupi untuk jumlah yang diminta
         if ($totalRequestedQty <= $freshStock) {
             return [
                 'is_waiting_restock'       => false,
@@ -92,13 +70,17 @@ class CartController extends Controller
             ];
         }
 
+        // Jika stok tidak cukup dan user TIDAK memilih opsi "Tunggu Restok"
         if (!$allowWaitingRestock) {
             return [
                 'error'   => true,
-                'message' => $this->stockErrorMessage($product),
+                'message' => $variant 
+                    ? $this->variantStockErrorMessage($product, $variant) 
+                    : $this->stockErrorMessage($product),
             ];
         }
 
+        // Jika stok tidak cukup tapi user bersedia menunggu restok
         return [
             'is_waiting_restock'       => true,
             'waiting_restock_quantity' => $totalRequestedQty - $freshStock,
@@ -123,9 +105,7 @@ class CartController extends Controller
     }
 
     /**
-     * ✅ FIX: Logika add ke keranjang di-extract ke satu method.
-     * Dipakai oleh add() dan buyNow() agar tidak duplikat.
-     * Sekarang variant-aware: status restock dihitung dari stok varian kalau ada.
+     * Logika add ke keranjang.
      */
     private function addToCart(Product $product, int $qty, $variantId, bool $allowWaitingRestock): CartItem
     {
@@ -167,25 +147,16 @@ class CartController extends Controller
         return $item;
     }
 
-    /**
-     * Tampilkan halaman keranjang.
-     */
     public function index()
     {
         $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
-
         $items = $cart->items()->with(['product', 'variant'])->get();
-
         return view('cart.index', compact('items'));
     }
 
-    /**
-     * Tambah produk ke keranjang.
-     */
     public function add(Request $request, $productId)
     {
         $product = Product::with('variants')->findOrFail($productId);
-
         $request->validate($this->cartValidationRules($product));
 
         try {
@@ -202,9 +173,6 @@ class CartController extends Controller
         return back()->with('success', 'Produk berhasil ditambahkan ke keranjang.');
     }
 
-    /**
-     * Update jumlah item di keranjang.
-     */
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -213,8 +181,6 @@ class CartController extends Controller
         ]);
 
         $item = CartItem::with(['product', 'variant'])->findOrFail($id);
-
-        // ✅ Pastikan item milik cart user yang login
         $cart = Cart::where('user_id', Auth::id())->firstOrFail();
         if ($item->cart_id !== $cart->id) {
             abort(403, 'Akses ditolak.');
@@ -240,32 +206,21 @@ class CartController extends Controller
         return back()->with('success', 'Jumlah produk berhasil diperbarui.');
     }
 
-    /**
-     * Hapus item dari keranjang.
-     */
     public function remove($id)
     {
         $item = CartItem::findOrFail($id);
-
-        // ✅ Pastikan item milik cart user yang login
         $cart = Cart::where('user_id', Auth::id())->firstOrFail();
         if ($item->cart_id !== $cart->id) {
             abort(403, 'Akses ditolak.');
         }
 
         $item->delete();
-
         return back()->with('success', 'Produk berhasil dihapus dari keranjang.');
     }
 
-    /**
-     * Beli langsung — tambah ke keranjang lalu redirect ke checkout.
-     * ✅ FIX: Menggunakan addToCart() yang sama dengan add(), tidak duplikat.
-     */
     public function buyNow(Request $request, $productId)
     {
         $product = Product::with('variants')->findOrFail($productId);
-
         $request->validate($this->cartValidationRules($product));
 
         try {
@@ -279,8 +234,6 @@ class CartController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()
-            ->route('checkout.index')
-            ->with('success', 'Produk siap dibeli. Silakan lanjut checkout.');
+        return redirect()->route('checkout.index')->with('success', 'Produk siap dibeli. Silakan lanjut checkout.');
     }
 }

@@ -39,7 +39,10 @@
                     <div class="settings-input-group full-width">
                         <div class="stock-system-box">
                             <h3>Pengaturan Stok</h3>
-                            <p class="text-muted">Atur stok berdasarkan satuan atau dus.</p>
+                            <p class="text-muted">
+                                Jika produk ini punya varian berat, "Total Stok Satuan" di bawah adalah
+                                <strong>stok fisik bersama semua varian</strong> (bukan stok per varian).
+                            </p>
 
                             <label>Mode Stok</label>
                             <select name="stock_mode" id="stock_mode" required>
@@ -78,6 +81,12 @@
                                     Total stok:
                                     <strong id="satuan_preview">0 pcs</strong>
                                 </div>
+
+                                @if($product->variants->count())
+                                    <div class="stock-preview-box">
+                                        Stok fisik saat ini: <strong>{{ $product->admin_stock_label }}</strong>
+                                    </div>
+                                @endif
                             </div>
 
                             <div id="stock_dus_box" style="display:none;">
@@ -134,7 +143,11 @@
 
                 <div class="admin-variant-box">
                     <h3>Varian Produk</h3>
-                    <p class="text-muted">Edit ukuran / berat / stok produk di bawah ini. Berat wajib diisi (dalam gram) agar pengurangan stok akurat saat ada transaksi.</p>
+                    <p class="text-muted">
+                        Edit ukuran / berat / harga produk di bawah ini. Berat wajib diisi (dalam gram)
+                        agar pengurangan stok akurat saat ada transaksi. Stok tiap varian dihitung
+                        otomatis dari Total Stok Satuan di atas — tidak diisi manual.
+                    </p>
 
                     <div id="variant-wrapper" data-count="{{ $product->variants->count() }}">
                         @forelse($product->variants as $index => $variant)
@@ -143,14 +156,15 @@
                                 <input type="text" name="variants[{{ $index }}][variant_name]" value="{{ $variant->variant_name }}" placeholder="Contoh: 250 Gram">
                                 <input type="number" name="variants[{{ $index }}][price]" value="{{ $variant->price }}" placeholder="Harga">
                                 <input type="number" name="variants[{{ $index }}][weight]" value="{{ $variant->weight }}" placeholder="Berat (gram)" min="0" step="1">
-                                <input type="number" name="variants[{{ $index }}][stock]" value="{{ $variant->stock }}" placeholder="Stok" min="0" step="1">
+                                <span class="text-muted" style="align-self:center; white-space:nowrap;">
+                                    Stok tersedia: {{ $variant->available_stock }}
+                                </span>
                             </div>
                         @empty
                             <div class="variant-row">
                                 <input type="text" name="variants[0][variant_name]" placeholder="Contoh: 250 Gram">
                                 <input type="number" name="variants[0][price]" placeholder="Harga">
                                 <input type="number" name="variants[0][weight]" placeholder="Berat (gram)" min="0" step="1">
-                                <input type="number" name="variants[0][stock]" placeholder="Stok" min="0" step="1">
                             </div>
                         @endforelse
                     </div>
@@ -184,7 +198,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 <input type="text" name="variants[${variantIndex}][variant_name]" placeholder="Contoh: 500 Gram">
                 <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga">
                 <input type="number" name="variants[${variantIndex}][weight]" placeholder="Berat (gram)" min="0" step="1">
-                <input type="number" name="variants[${variantIndex}][stock]" placeholder="Stok" min="0" step="1">
             `;
 
             wrapper.appendChild(row);

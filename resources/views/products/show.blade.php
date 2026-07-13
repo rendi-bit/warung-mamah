@@ -70,7 +70,7 @@
                                         <option
                                             value="{{ $variant->id }}"
                                             data-price="{{ $variant->price }}"
-                                            data-stock="{{ $variant->stock }}"
+                                            data-stock="{{ $product->stock_quantity }}"
                                         >
                                             {{ $variant->variant_name }} - Rp {{ number_format($variant->price, 0, ',', '.') }}
                                         </option>
@@ -270,25 +270,28 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateAvailableStock() {
         if (variantSelect && variantSelect.value) {
             const selectedOption = variantSelect.options[variantSelect.selectedIndex];
-            availableStock = Number(selectedOption.getAttribute('data-stock')) || 0;
+
+            availableStock = Number(selectedOption.dataset.stock) || 0;
 
             if (stockDisplay) {
-                stockDisplay.innerText = availableStock + ' pcs';
+                stockDisplay.innerText = availableStock + ' ' + productUnit;
             }
+
             if (modalStockText) {
-                modalStockText.innerText = availableStock + ' pcs';
+                modalStockText.innerText = availableStock + ' ' + productUnit;
             }
         } else {
             availableStock = productStock;
 
             if (stockDisplay) {
-                stockDisplay.innerText = "{{ $product->stock_label }}";
+                stockDisplay.innerText = productStock + ' ' + productUnit;
             }
+
             if (modalStockText) {
                 modalStockText.innerText = productStock + ' ' + productUnit;
             }
         }
-    }
+}
 
     if (variantSelect && priceElement) {
         variantSelect.addEventListener('change', function () {

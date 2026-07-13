@@ -6,23 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('product_variants', function (Blueprint $table) {
-            $table->integer('weight')->after('variant_name');
+            // Berapa gram yang direpresentasikan 1 pcs varian ini (contoh: 1kg = 1000)
+            $table->integer('weight')->default(0)->after('variant_name');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('product_variants', function (Blueprint $table) {
-            //
+            $table->dropColumn('weight');
         });
     }
 };

@@ -9,13 +9,6 @@
                 <h2>Keranjang Kamu</h2>
                 <p>Periksa kembali produk sebelum lanjut ke checkout.</p>
             </div>
-
-            @if($items->count())
-                <a href="{{ route('products.index') }}" class="cart-continue-link">
-                    <i class="fas fa-arrow-left"></i>
-                    Lanjut Belanja
-                </a>
-            @endif
         </div>
 
         @if($items->count())
@@ -31,7 +24,7 @@
                             $subtotal = $price * $item->quantity;
                             $grandTotal += $subtotal;
 
-                            // ✅ FIX: stok tersedia diambil dari VARIAN kalau ada, kalau tidak dari produk utama
+                            // stok tersedia diambil dari VARIAN kalau ada, kalau tidak dari produk utama
                             $availableStock = $item->variant ? $item->variant->stock : $item->product->stock_quantity;
                             $stockUnitLabel = $item->product->stock_unit ?? 'pcs';
                         @endphp

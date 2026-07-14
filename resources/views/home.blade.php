@@ -116,12 +116,6 @@
                             <div class="product-card-body">
                                 <div class="product-top-row">
                                     <span class="product-category">{{ $product->category->category_name ?? '-' }}</span>
-
-                                    @if($product->variants->count())
-                                        <span class="product-badge">Punya Varian</span>
-                                    @else
-                                        <span class="product-badge">Ready</span>
-                                    @endif
                                 </div>
 
                                 <h3 class="product-title">{{ $product->name }}</h3>

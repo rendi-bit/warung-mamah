@@ -22,10 +22,6 @@
 
             <div class="product-detail-info">
                 <div class="detail-category-row">
-                    <span class="detail-category">
-                        {{ $product->category->category_name ?? 'Kategori' }}
-                    </span>
-                    <span class="detail-status">Ready Stock</span>
                 </div>
 
                 <h1 class="detail-title">{{ $product->name }}</h1>

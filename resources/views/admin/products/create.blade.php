@@ -42,6 +42,7 @@
                         <option value="gram">Gram</option>
                         <option value="liter">Liter</option>
                         <option value="kaleng">Kaleng</option>
+                        <option value="renceng">Renceng</option>
                     </select>
 
                     <div id="stock_satuan_box">

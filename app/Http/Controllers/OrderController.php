@@ -100,17 +100,35 @@ class OrderController extends Controller
             foreach ($order->items as $item) {
                 if (!$item->product) continue;
 
-                $stockToReturn = $item->quantity - ($item->waiting_restock_quantity ?? 0);
-
-                if ($stockToReturn <= 0) {
-                    continue;
-                }
-
-                // ✅ FIX FINAL: Keduanya mengembalikan ke stock_quantity produk utama
-                // Tidak perlu lagi memisahkan rumus base_stock gram perkalian berat.
                 $product = $item->product;
                 $product->lockForUpdate();
-                $product->increment('stock_quantity', $stockToReturn);
+
+                if ($item->variant) {
+
+                    // Produk dengan varian → kembalikan gram ke base_stock
+                    $stockToReturn = ($item->variant->weight * $item->quantity)
+                        - ($item->waiting_restock_quantity ?? 0);
+
+                    if ($stockToReturn > 0) {
+
+                        $product->increment('base_stock', $stockToReturn);
+
+                        // Sinkronkan tampilan stok (kg)
+                        $product->update([
+                            'stock_quantity' => $product->fresh()->base_stock / 1000
+                        ]);
+                    }
+
+                } else {
+
+                    // Produk tanpa varian
+                    $stockToReturn = $item->quantity - ($item->waiting_restock_quantity ?? 0);
+
+                    if ($stockToReturn > 0) {
+                        $product->increment('stock_quantity', $stockToReturn);
+                    }
+
+                }
             }
 
             $order->update(['order_status' => 'cancelled']);

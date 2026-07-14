@@ -57,7 +57,7 @@
                             <label>Jenis Satuan</label>
                             <select name="stock_unit" id="stock_unit" required>
                                 @php
-                                    $units = ['pcs', 'botol', 'bungkus', 'pack', 'kg', 'gram', 'liter', 'ikat'];
+                                    $units = ['pcs', 'botol', 'bungkus', 'pack', 'kg', 'gram', 'liter', 'kaleng', 'renceng'];
                                 @endphp
 
                                 @foreach($units as $unit)
